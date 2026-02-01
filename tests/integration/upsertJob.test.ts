@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import openDatabase from "../../src/db/openDatabase";
-import migrateDatabase from "../../src/db/migrateDatabase";
 import { eq } from "drizzle-orm";
-import { jobs } from "../../src/db/schema";
 import upsertJob from "../../src/daemon/jobs/upsertJob";
+import migrateDatabase from "../../src/db/migrateDatabase";
+import openDatabase from "../../src/db/openDatabase";
+import { jobs } from "../../src/db/schema";
 import formatJobRow from "../../src/shared/jobs/formatJobRow";
 
 describe("upsertJob", () => {
@@ -29,7 +29,7 @@ describe("upsertJob", () => {
       name: "backup",
       command: ["/bin/echo", "ok"],
       schedule: "0 2 * * *",
-      timezone: "UTC"
+      timezone: "UTC",
     };
 
     const result = upsertJob(orm, payload);

@@ -40,6 +40,6 @@ export default function createScheduler(db: Db) {
     },
     runNow(job: Job) {
       return runJobWithTracking(state, db, job);
-    }
+    },
   };
 }

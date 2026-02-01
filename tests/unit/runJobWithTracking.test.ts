@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
+import upsertJob from "../../src/daemon/jobs/upsertJob";
 import createSchedulerState from "../../src/daemon/scheduler/createSchedulerState";
 import runJobWithTracking from "../../src/daemon/scheduler/runJobWithTracking";
-import openDatabase from "../../src/db/openDatabase";
 import migrateDatabase from "../../src/db/migrateDatabase";
+import openDatabase from "../../src/db/openDatabase";
 import { runs } from "../../src/db/schema";
-import upsertJob from "../../src/daemon/jobs/upsertJob";
 import createTempRoot from "../helpers/createTempRoot";
 import setXdgEnv from "../helpers/setXdgEnv";
 
@@ -20,7 +20,7 @@ describe("runJobWithTracking", () => {
       name: "job",
       command: ["/bin/echo", "hello"],
       schedule: "*/1 * * * *",
-      overlapPolicy: "skip"
+      overlapPolicy: "skip",
     });
 
     const state = createSchedulerState();

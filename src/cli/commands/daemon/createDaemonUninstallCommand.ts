@@ -7,13 +7,13 @@ export default function createDaemonUninstallCommand() {
   return defineCommand({
     meta: {
       name: "uninstall",
-      description: "Remove auto-start service"
+      description: "Remove auto-start service",
     },
     args: {
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     run({ args }) {
       if (process.env.CRND_AUTOSTART_DRY_RUN === "1") {
@@ -33,7 +33,7 @@ export default function createDaemonUninstallCommand() {
           os.homedir(),
           "Library",
           "LaunchAgents",
-          "com.crnd.daemon.plist"
+          "com.crnd.daemon.plist",
         );
         Bun.spawnSync(["launchctl", "unload", plistPath]);
         if (existsSync(plistPath)) {
@@ -54,9 +54,15 @@ export default function createDaemonUninstallCommand() {
           ".config",
           "systemd",
           "user",
-          "crnd.service"
+          "crnd.service",
         );
-        Bun.spawnSync(["systemctl", "--user", "disable", "--now", "crnd.service"]);
+        Bun.spawnSync([
+          "systemctl",
+          "--user",
+          "disable",
+          "--now",
+          "crnd.service",
+        ]);
         Bun.spawnSync(["systemctl", "--user", "daemon-reload"]);
         if (existsSync(servicePath)) {
           unlinkSync(servicePath);
@@ -88,6 +94,6 @@ export default function createDaemonUninstallCommand() {
         console.log("daemon: unsupported platform");
       }
       process.exitCode = 1;
-    }
+    },
   });
 }

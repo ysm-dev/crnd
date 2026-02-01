@@ -6,17 +6,17 @@ export default function createExportCommand() {
   return defineCommand({
     meta: {
       name: "export",
-      description: "Export jobs to TOML"
+      description: "Export jobs to TOML",
     },
     args: {
       output: {
         type: "string",
-        alias: "o"
+        alias: "o",
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -70,6 +70,6 @@ export default function createExportCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, rmSync } from "node:fs";
-import createTempRoot from "../helpers/createTempRoot";
-import setXdgEnv from "../helpers/setXdgEnv";
 import readDaemonState from "../../src/shared/state/readDaemonState";
 import removeDaemonState from "../../src/shared/state/removeDaemonState";
 import writeDaemonState from "../../src/shared/state/writeDaemonState";
+import createTempRoot from "../helpers/createTempRoot";
+import setXdgEnv from "../helpers/setXdgEnv";
 
 describe("daemon state", () => {
   test("write/read/remove", () => {
@@ -15,7 +15,7 @@ describe("daemon state", () => {
       token: "token",
       pid: 42,
       startedAt: "2026-02-01T10:00:00Z",
-      version: "0.0.0"
+      version: "0.0.0",
     });
     const state = readDaemonState();
     expect(state?.port).toBe(1234);

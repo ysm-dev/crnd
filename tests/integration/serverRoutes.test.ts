@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { Hono } from "hono";
-import openDatabase from "../../src/db/openDatabase";
-import migrateDatabase from "../../src/db/migrateDatabase";
+import type { Hono } from "hono";
 import createLogger from "../../src/daemon/createLogger";
 import createJobsFileSync from "../../src/daemon/jobs/createJobsFileSync";
 import createScheduler from "../../src/daemon/scheduler/createScheduler";
 import createApp from "../../src/daemon/server/createApp";
+import migrateDatabase from "../../src/db/migrateDatabase";
+import openDatabase from "../../src/db/openDatabase";
 import createTempRoot from "../helpers/createTempRoot";
 import getSleepCommand from "../helpers/getSleepCommand";
 import setXdgEnv from "../helpers/setXdgEnv";
@@ -34,14 +34,14 @@ describe("daemon routes", () => {
       {
         token,
         startedAt: new Date().toISOString(),
-        pid: 1
+        pid: 1,
       },
       orm,
       scheduler,
       jobsFileSync,
       () => {
         shutdownCalls += 1;
-      }
+      },
     );
   });
 
@@ -54,14 +54,19 @@ describe("daemon routes", () => {
   const request = (url: string, init?: RequestInit) => {
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Bearer ${token}`);
-    return app.fetch(new Request(`http://localhost${url}`, { ...init, headers }));
+    return app.fetch(
+      new Request(`http://localhost${url}`, { ...init, headers }),
+    );
   };
 
   const waitForRunning = async (name: string) => {
     for (let attempt = 0; attempt < 10; attempt += 1) {
       const res = await request(`/jobs/${name}/runs?limit=1`);
       if (res.ok) {
-        const list = await res.json();
+        const list = (await res.json()) as Array<{
+          status: string;
+          pid: number;
+        }>;
         const run = list[0];
         if (run && run.status === "running" && run.pid) {
           return true;
@@ -83,13 +88,13 @@ describe("daemon routes", () => {
       name: "job",
       command: ["/bin/echo", "hello"],
       schedule: "*/1 * * * *",
-      timezone: "UTC"
+      timezone: "UTC",
     };
 
     const created = await request("/jobs", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(jobPayload)
+      body: JSON.stringify(jobPayload),
     });
     expect(created.status).toBe(200);
 
@@ -111,14 +116,14 @@ describe("daemon routes", () => {
     const runOnce = await request("/jobs/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "job" })
+      body: JSON.stringify({ name: "job" }),
     });
     expect(runOnce.status).toBe(200);
 
     await wait(100);
     const runs = await request("/jobs/job/runs?limit=5");
     expect(runs.status).toBe(200);
-    const runList = await runs.json();
+    const runList = (await runs.json()) as Array<{ id: string }>;
     const runIdValue = runList[0]?.id;
     if (typeof runIdValue !== "string") {
       throw new Error("missing run id");
@@ -136,19 +141,19 @@ describe("daemon routes", () => {
       name: "sleepy",
       command: [sleepCommand, "5"],
       schedule: "*/5 * * * *",
-      overlapPolicy: "allow"
+      overlapPolicy: "allow",
     };
 
     await request("/jobs", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(sleepyPayload)
+      body: JSON.stringify(sleepyPayload),
     });
 
     await request("/jobs/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "sleepy" })
+      body: JSON.stringify({ name: "sleepy" }),
     });
     await waitForRunning("sleepy");
     const stop = await request("/jobs/sleepy/stop", { method: "POST" });
@@ -157,20 +162,20 @@ describe("daemon routes", () => {
     await request("/jobs/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "sleepy" })
+      body: JSON.stringify({ name: "sleepy" }),
     });
     await waitForRunning("sleepy");
     const kill = await request("/jobs/sleepy/kill", { method: "POST" });
     expect(kill.status).toBe(200);
 
     const exported = await request("/export", { method: "POST" });
-    const exportJson = await exported.json();
+    const exportJson = (await exported.json()) as { toml: string };
     expect(typeof exportJson.toml).toBe("string");
 
     const imported = await request("/import", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ toml: exportJson.toml })
+      body: JSON.stringify({ toml: exportJson.toml }),
     });
     expect(imported.status).toBe(200);
 

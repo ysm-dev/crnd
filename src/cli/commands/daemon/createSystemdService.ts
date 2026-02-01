@@ -1,9 +1,11 @@
 export default function createSystemdService(
   args: string[],
   stdoutPath: string,
-  stderrPath: string
+  stderrPath: string,
 ) {
-  const execStart = args.map((arg) => (arg.includes(" ") ? `"${arg}"` : arg)).join(" ");
+  const execStart = args
+    .map((arg) => (arg.includes(" ") ? `"${arg}"` : arg))
+    .join(" ");
   return [
     "[Unit]",
     "Description=crnd daemon",
@@ -17,6 +19,6 @@ export default function createSystemdService(
     "",
     "[Install]",
     "WantedBy=default.target",
-    ""
+    "",
   ].join("\n");
 }

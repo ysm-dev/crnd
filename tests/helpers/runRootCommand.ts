@@ -1,5 +1,5 @@
-import { runCommand } from "citty";
 import path from "node:path";
+import { runCommand } from "citty";
 import createRootCommand from "../../src/cli/commands/createRootCommand";
 
 export default async function runRootCommand(rawArgs: string[]) {

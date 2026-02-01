@@ -15,7 +15,7 @@ const runsTable = sqliteTable("runs", {
   endedAt: text("ended_at"),
   stdoutPath: text("stdout_path"),
   stderrPath: text("stderr_path"),
-  errorMessage: text("error_message")
+  errorMessage: text("error_message"),
 });
 
 export default function getRunsTable() {

@@ -5,18 +5,18 @@ export default function createRunOnceCommand() {
   return defineCommand({
     meta: {
       name: "run-once",
-      description: "Run a job immediately"
+      description: "Run a job immediately",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -72,6 +72,6 @@ export default function createRunOnceCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

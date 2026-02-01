@@ -7,13 +7,13 @@ export default function createDaemonStartCommand() {
   return defineCommand({
     meta: {
       name: "start",
-      description: "Start the crnd daemon"
+      description: "Start the crnd daemon",
     },
     args: {
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const existing = createRpcClient();
@@ -37,7 +37,7 @@ export default function createDaemonStartCommand() {
       const proc = Bun.spawn(getDaemonSpawnArgs(), {
         stdin: "ignore",
         stdout: "ignore",
-        stderr: "ignore"
+        stderr: "ignore",
       });
       proc.unref();
 
@@ -58,8 +58,7 @@ export default function createDaemonStartCommand() {
             }
             return;
           }
-        } catch {
-        }
+        } catch {}
       }
 
       const payload = { status: "start_timeout" };
@@ -69,6 +68,6 @@ export default function createDaemonStartCommand() {
         console.log("daemon: start timeout");
       }
       process.exitCode = 3;
-    }
+    },
   });
 }

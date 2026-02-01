@@ -5,18 +5,18 @@ export default function createStopCommand() {
   return defineCommand({
     meta: {
       name: "stop",
-      description: "Stop a running job"
+      description: "Stop a running job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -32,7 +32,9 @@ export default function createStopCommand() {
       }
 
       try {
-        const res = await client.jobs[":name"].stop.$post({ param: { name: args.name } });
+        const res = await client.jobs[":name"].stop.$post({
+          param: { name: args.name },
+        });
         if (res.status === 404) {
           const payload = { status: "not_found" };
           if (!process.stdout.isTTY || args.json) {
@@ -82,6 +84,6 @@ export default function createStopCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

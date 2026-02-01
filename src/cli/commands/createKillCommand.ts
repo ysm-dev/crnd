@@ -5,18 +5,18 @@ export default function createKillCommand() {
   return defineCommand({
     meta: {
       name: "kill",
-      description: "Kill a running job"
+      description: "Kill a running job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -32,7 +32,9 @@ export default function createKillCommand() {
       }
 
       try {
-        const res = await client.jobs[":name"].kill.$post({ param: { name: args.name } });
+        const res = await client.jobs[":name"].kill.$post({
+          param: { name: args.name },
+        });
         if (res.status === 404) {
           const payload = { status: "not_found" };
           if (!process.stdout.isTTY || args.json) {
@@ -82,6 +84,6 @@ export default function createKillCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

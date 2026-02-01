@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync } from "node:fs";
-import path from "node:path";
 import appendEvent from "../../src/shared/events/appendEvent";
 import getEventsPath from "../../src/shared/paths/getEventsPath";
 import getJobRunsDir from "../../src/shared/paths/getJobRunsDir";

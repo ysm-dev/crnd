@@ -8,34 +8,38 @@ import { jobs, runs } from "../../../db/schema";
 type Db = ReturnType<typeof openDatabase>["orm"];
 
 const paramsSchema = z.object({
-  name: z.string().min(1)
+  name: z.string().min(1),
 });
 
 export default function registerJobsStopRoute(db: Db) {
-  return new Hono().post("/jobs/:name/stop", zValidator("param", paramsSchema), (c) => {
-    const { name } = c.req.valid("param");
-    const job = db.select().from(jobs).where(eq(jobs.name, name)).get();
-    if (!job) {
-      return c.json({ error: "job_not_found" }, 404);
-    }
+  return new Hono().post(
+    "/jobs/:name/stop",
+    zValidator("param", paramsSchema),
+    (c) => {
+      const { name } = c.req.valid("param");
+      const job = db.select().from(jobs).where(eq(jobs.name, name)).get();
+      if (!job) {
+        return c.json({ error: "job_not_found" }, 404);
+      }
 
-    const run = db
-      .select()
-      .from(runs)
-      .where(eq(runs.jobId, job.id))
-      .orderBy(desc(runs.startedAt))
-      .get();
+      const run = db
+        .select()
+        .from(runs)
+        .where(eq(runs.jobId, job.id))
+        .orderBy(desc(runs.startedAt))
+        .get();
 
-    if (!run || run.status !== "running" || !run.pid) {
-      return c.json({ error: "run_not_running" }, 409);
-    }
+      if (!run || run.status !== "running" || !run.pid) {
+        return c.json({ error: "run_not_running" }, 409);
+      }
 
-    try {
-      process.kill(run.pid, "SIGTERM");
-    } catch {
-      return c.json({ error: "stop_failed" }, 500);
-    }
+      try {
+        process.kill(run.pid, "SIGTERM");
+      } catch {
+        return c.json({ error: "stop_failed" }, 500);
+      }
 
-    return c.json({ ok: true, runId: run.id });
-  });
+      return c.json({ ok: true, runId: run.id });
+    },
+  );
 }

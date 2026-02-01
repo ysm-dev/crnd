@@ -10,7 +10,7 @@ export default function startServer(app: Hono) {
       return Bun.serve({
         fetch: app.fetch,
         hostname: "127.0.0.1",
-        port
+        port,
       });
     } catch (error) {
       if (offset === attempts - 1) {

@@ -5,6 +5,6 @@ export default function createJobsSchemas() {
   const jobs = getJobsTable();
   return {
     insert: createInsertSchema(jobs),
-    select: createSelectSchema(jobs)
+    select: createSelectSchema(jobs),
   };
 }

@@ -15,7 +15,7 @@ export default function createTomlJobSchema() {
       timeout_ms: z.number().int().positive().optional(),
       paused: z.boolean().optional(),
       overlap_policy: z.enum(["skip", "allow"]).optional(),
-      description: z.string().min(1).optional()
+      description: z.string().min(1).optional(),
     })
     .superRefine((value, ctx) => {
       const hasSchedule = Boolean(value.schedule);
@@ -24,7 +24,7 @@ export default function createTomlJobSchema() {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Provide schedule or run_at",
-          path: ["schedule"]
+          path: ["schedule"],
         });
       }
     });

@@ -9,7 +9,7 @@ import formatRunRow from "../../../shared/runs/formatRunRow";
 type Db = ReturnType<typeof openDatabase>["orm"];
 
 const paramsSchema = z.object({
-  id: z.string().min(1)
+  id: z.string().min(1),
 });
 
 export default function registerRunGetRoute(db: Db) {

@@ -6,7 +6,7 @@ import type createJobsFileSync from "../../jobs/createJobsFileSync";
 type JobsFileSync = ReturnType<typeof createJobsFileSync>;
 
 const payloadSchema = z.object({
-  toml: z.string().min(1)
+  toml: z.string().min(1),
 });
 
 export default function registerImportRoute(jobsFileSync: JobsFileSync) {

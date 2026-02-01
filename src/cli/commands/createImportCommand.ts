@@ -6,18 +6,18 @@ export default function createImportCommand() {
   return defineCommand({
     meta: {
       name: "import",
-      description: "Import jobs from TOML"
+      description: "Import jobs from TOML",
     },
     args: {
       file: {
         type: "string",
         alias: "f",
-        required: true
+        required: true,
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -75,6 +75,6 @@ export default function createImportCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

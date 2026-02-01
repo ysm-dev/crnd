@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, rmSync } from "node:fs";
+import writeDaemonState from "../../src/shared/state/writeDaemonState";
 import createTempRoot from "../helpers/createTempRoot";
 import runRootCommand from "../helpers/runRootCommand";
 import setXdgEnv from "../helpers/setXdgEnv";
-import writeDaemonState from "../../src/shared/state/writeDaemonState";
 
 describe("cli error paths", () => {
   let root = "";
@@ -42,9 +42,11 @@ describe("cli error paths", () => {
       token: "token",
       pid: 1,
       startedAt: "2026-02-01T10:00:00Z",
-      version: "0.0.0"
+      version: "0.0.0",
     });
-    expect(await runRootCommand(["schedule", "-n", "job", "-s", "*/1 * * * *"])).toBe(2);
+    expect(
+      await runRootCommand(["schedule", "-n", "job", "-s", "*/1 * * * *"]),
+    ).toBe(2);
     expect(
       await runRootCommand([
         "schedule",
@@ -56,8 +58,8 @@ describe("cli error paths", () => {
         "bad",
         "--",
         "/bin/echo",
-        "hi"
-      ])
+        "hi",
+      ]),
     ).toBe(2);
     expect(
       await runRootCommand([
@@ -70,8 +72,8 @@ describe("cli error paths", () => {
         "bad",
         "--",
         "/bin/echo",
-        "hi"
-      ])
+        "hi",
+      ]),
     ).toBe(2);
     expect(
       await runRootCommand([
@@ -84,8 +86,8 @@ describe("cli error paths", () => {
         "BADENV",
         "--",
         "/bin/echo",
-        "hi"
-      ])
+        "hi",
+      ]),
     ).toBe(2);
     expect(await runRootCommand(["delete", "-n", "job"])).toBe(2);
     expect(await runRootCommand(["runs", "-n", "job", "-l", "bad"])).toBe(2);
@@ -96,5 +98,4 @@ describe("cli error paths", () => {
     const code = await runRootCommand(["doctor"]);
     expect(code).toBe(1);
   });
-
 });

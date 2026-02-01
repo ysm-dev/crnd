@@ -6,7 +6,7 @@ export default function createDaemonStateSchema() {
     token: z.string().min(1),
     pid: z.number().int().positive(),
     startedAt: z.string().datetime(),
-    version: z.string().min(1)
+    version: z.string().min(1),
   });
 }
 

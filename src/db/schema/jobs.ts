@@ -18,7 +18,7 @@ const jobsTable = sqliteTable("jobs", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   lastRunAt: text("last_run_at"),
-  nextRunAt: text("next_run_at")
+  nextRunAt: text("next_run_at"),
 });
 
 export default function getJobsTable() {

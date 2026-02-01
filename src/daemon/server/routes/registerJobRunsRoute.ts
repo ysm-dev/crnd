@@ -9,11 +9,11 @@ import formatRunRow from "../../../shared/runs/formatRunRow";
 type Db = ReturnType<typeof openDatabase>["orm"];
 
 const paramsSchema = z.object({
-  name: z.string().min(1)
+  name: z.string().min(1),
 });
 
 const querySchema = z.object({
-  limit: z.string().optional()
+  limit: z.string().optional(),
 });
 
 export default function registerJobRunsRoute(db: Db) {
@@ -30,7 +30,8 @@ export default function registerJobRunsRoute(db: Db) {
       }
 
       const parsedLimit = limit ? Number(limit) : 20;
-      const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 20;
+      const safeLimit =
+        Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 20;
       const rows = db
         .select()
         .from(runs)
@@ -40,6 +41,6 @@ export default function registerJobRunsRoute(db: Db) {
         .all();
 
       return c.json(rows.map(formatRunRow));
-    }
+    },
   );
 }

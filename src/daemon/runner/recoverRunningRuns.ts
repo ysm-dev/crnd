@@ -6,7 +6,11 @@ import appendEvent from "../../shared/events/appendEvent";
 type Db = ReturnType<typeof openDatabase>["orm"];
 
 export default function recoverRunningRuns(db: Db) {
-  const running = db.select().from(runs).where(eq(runs.status, "running")).all();
+  const running = db
+    .select()
+    .from(runs)
+    .where(eq(runs.status, "running"))
+    .all();
   const now = new Date().toISOString();
 
   for (const run of running) {

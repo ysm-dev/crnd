@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import path from "node:path";
+import { drizzle } from "drizzle-orm/bun-sqlite";
 import getStateDir from "../shared/paths/getStateDir";
 
 export default function openDatabase() {

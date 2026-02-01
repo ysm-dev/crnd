@@ -1,8 +1,10 @@
-import toml from "@iarna/toml";
 import type { JsonMap } from "@iarna/toml";
+import toml from "@iarna/toml";
 import type formatJobRow from "./formatJobRow";
 
-export default function serializeJobsToml(jobs: Array<ReturnType<typeof formatJobRow>>) {
+export default function serializeJobsToml(
+  jobs: Array<ReturnType<typeof formatJobRow>>,
+) {
   const jobsSection: JsonMap = {};
   const doc: JsonMap = { jobs: jobsSection };
 
@@ -11,7 +13,7 @@ export default function serializeJobsToml(jobs: Array<ReturnType<typeof formatJo
       id: job.id,
       command: job.command,
       paused: job.paused,
-      overlap_policy: job.overlapPolicy
+      overlap_policy: job.overlapPolicy,
     };
 
     if (job.description) {

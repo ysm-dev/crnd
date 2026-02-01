@@ -5,17 +5,17 @@ export default function createStatusCommand() {
   return defineCommand({
     meta: {
       name: "status",
-      description: "Show daemon status"
+      description: "Show daemon status",
     },
     args: {
       name: {
         type: "string",
-        alias: "n"
+        alias: "n",
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       if (args.name) {
@@ -32,7 +32,9 @@ export default function createStatusCommand() {
         }
 
         try {
-          const jobRes = await client.jobs[":name"].$get({ param: { name: args.name } });
+          const jobRes = await client.jobs[":name"].$get({
+            param: { name: args.name },
+          });
           if (jobRes.status === 404) {
             const payload = { status: "not_found" };
             if (!process.stdout.isTTY || args.json) {
@@ -58,13 +60,13 @@ export default function createStatusCommand() {
           const job = await jobRes.json();
           const runsRes = await client.jobs[":name"].runs.$get({
             param: { name: args.name },
-            query: { limit: "1" }
+            query: { limit: "1" },
           });
 
           const latestRun = runsRes.ok ? (await runsRes.json())[0] : null;
           const payload = {
             job,
-            latestRun
+            latestRun,
           };
 
           if (!process.stdout.isTTY || args.json) {
@@ -78,7 +80,9 @@ export default function createStatusCommand() {
             console.log(`nextRunAt: ${job.nextRunAt}`);
           }
           if (latestRun) {
-            console.log(`lastRun: ${latestRun.status} ${latestRun.startedAt ?? ""}`.trim());
+            console.log(
+              `lastRun: ${latestRun.status} ${latestRun.startedAt ?? ""}`.trim(),
+            );
           }
           return;
         } catch {
@@ -136,6 +140,6 @@ export default function createStatusCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

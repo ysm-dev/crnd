@@ -5,22 +5,22 @@ export default function createRunsCommand() {
   return defineCommand({
     meta: {
       name: "runs",
-      description: "List runs for a job"
+      description: "List runs for a job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       limit: {
         type: "string",
-        alias: "l"
+        alias: "l",
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -54,7 +54,7 @@ export default function createRunsCommand() {
       try {
         const res = await client.jobs[":name"].runs.$get({
           param: { name: args.name },
-          query: limit ? { limit: String(limit) } : {}
+          query: limit ? { limit: String(limit) } : {},
         });
         if (res.status === 404) {
           const payload = { status: "not_found" };
@@ -101,6 +101,6 @@ export default function createRunsCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

@@ -13,22 +13,18 @@ type JobsFileSync = ReturnType<typeof createJobsFileSync>;
 export default function registerJobsUpsertRoute(
   db: Db,
   scheduler: Scheduler,
-  jobsFileSync: JobsFileSync
+  jobsFileSync: JobsFileSync,
 ) {
   const schema = createJobInputSchema();
-  return new Hono().post(
-    "/jobs",
-    zValidator("json", schema),
-    (c) => {
-      const input = c.req.valid("json");
-      try {
-        const result = upsertJob(db, input);
-        scheduler.upsert(result.job);
-        jobsFileSync.writeFromDb();
-        return c.json(result.job);
-      } catch {
-        return c.json({ error: "job_not_saved" }, 500);
-      }
+  return new Hono().post("/jobs", zValidator("json", schema), (c) => {
+    const input = c.req.valid("json");
+    try {
+      const result = upsertJob(db, input);
+      scheduler.upsert(result.job);
+      jobsFileSync.writeFromDb();
+      return c.json(result.job);
+    } catch {
+      return c.json({ error: "job_not_saved" }, 500);
     }
-  );
+  });
 }

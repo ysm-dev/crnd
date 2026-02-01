@@ -11,8 +11,8 @@ export default function createRpcClient() {
 
     return hc<AppType>(`http://127.0.0.1:${state.port}`, {
       headers: {
-        Authorization: `Bearer ${state.token}`
-      }
+        Authorization: `Bearer ${state.token}`,
+      },
     });
   } catch {
     return null;

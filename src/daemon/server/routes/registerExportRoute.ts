@@ -8,7 +8,10 @@ import type createJobsFileSync from "../../jobs/createJobsFileSync";
 type Db = ReturnType<typeof openDatabase>["orm"];
 type JobsFileSync = ReturnType<typeof createJobsFileSync>;
 
-export default function registerExportRoute(db: Db, jobsFileSync: JobsFileSync) {
+export default function registerExportRoute(
+  db: Db,
+  jobsFileSync: JobsFileSync,
+) {
   return new Hono().post("/export", (c) => {
     const rows = db.select().from(jobs).all().map(formatJobRow);
     jobsFileSync.writeFromDb();

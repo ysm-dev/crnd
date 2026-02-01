@@ -5,7 +5,7 @@ const healthPayloadSchema = z.object({
   status: z.literal("ok"),
   startedAt: z.string(),
   pid: z.number().int(),
-  version: z.string()
+  version: z.string(),
 });
 
 type HealthPayload = z.infer<typeof healthPayloadSchema>;

@@ -9,7 +9,11 @@ type Db = ReturnType<typeof openDatabase>["orm"];
 type Job = ReturnType<typeof formatJobRow>;
 type SchedulerState = ReturnType<typeof createSchedulerState>;
 
-export default function runJobWithTracking(state: SchedulerState, db: Db, job: Job) {
+export default function runJobWithTracking(
+  state: SchedulerState,
+  db: Db,
+  job: Job,
+) {
   if (state.running.has(job.id) && job.overlapPolicy === "skip") {
     const runId = recordSkippedRun(db, job);
     const cron = state.scheduled.get(job.id);

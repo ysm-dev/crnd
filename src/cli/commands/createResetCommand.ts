@@ -5,18 +5,18 @@ export default function createResetCommand() {
   return defineCommand({
     meta: {
       name: "reset",
-      description: "Reset job runs and scheduling state"
+      description: "Reset job runs and scheduling state",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -32,7 +32,9 @@ export default function createResetCommand() {
       }
 
       try {
-        const res = await client.jobs[":name"].reset.$post({ param: { name: args.name } });
+        const res = await client.jobs[":name"].reset.$post({
+          param: { name: args.name },
+        });
         if (res.status === 404) {
           const payload = { status: "not_found" };
           if (!process.stdout.isTTY || args.json) {
@@ -71,6 +73,6 @@ export default function createResetCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

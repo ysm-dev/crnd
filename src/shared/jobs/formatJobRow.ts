@@ -9,6 +9,6 @@ export default function formatJobRow(row: unknown) {
   return {
     ...parsed,
     command: parseCommand(parsed.command),
-    env: parseEnv(parsed.env)
+    env: parseEnv(parsed.env),
   };
 }

@@ -3,7 +3,9 @@ import type { MiddlewareHandler } from "hono";
 export default function createAuthMiddleware(token: string): MiddlewareHandler {
   return async (c, next) => {
     const header = c.req.header("authorization");
-    const value = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : null;
+    const value = header?.startsWith("Bearer ")
+      ? header.slice("Bearer ".length)
+      : null;
 
     if (!value || value !== token) {
       return c.json({ error: "unauthorized" }, 401);

@@ -12,7 +12,7 @@ export default function setXdgEnv(root: string) {
     XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME,
     CRND_DISABLE_AUTOSTART: process.env.CRND_DISABLE_AUTOSTART,
     CRND_AUTOSTART_DRY_RUN: process.env.CRND_AUTOSTART_DRY_RUN,
-    CRND_PATHS_ROOT: process.env.CRND_PATHS_ROOT
+    CRND_PATHS_ROOT: process.env.CRND_PATHS_ROOT,
   };
 
   process.env.XDG_DATA_HOME = root;

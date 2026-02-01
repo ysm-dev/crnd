@@ -18,8 +18,12 @@ describe("toml serialization", () => {
         timezone: "UTC",
         timeoutMs: null,
         paused: false,
-        overlapPolicy: "skip"
-      }
+        overlapPolicy: "skip",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+        lastRunAt: null,
+        nextRunAt: null,
+      },
     ];
 
     const toml = serializeJobsToml(jobs);

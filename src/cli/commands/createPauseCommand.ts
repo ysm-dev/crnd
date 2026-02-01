@@ -5,18 +5,18 @@ export default function createPauseCommand() {
   return defineCommand({
     meta: {
       name: "pause",
-      description: "Pause a job"
+      description: "Pause a job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -32,7 +32,9 @@ export default function createPauseCommand() {
       }
 
       try {
-        const res = await client.jobs[":name"].pause.$post({ param: { name: args.name } });
+        const res = await client.jobs[":name"].pause.$post({
+          param: { name: args.name },
+        });
         if (res.status === 404) {
           const payload = { status: "not_found" };
           if (!process.stdout.isTTY || args.json) {
@@ -71,6 +73,6 @@ export default function createPauseCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

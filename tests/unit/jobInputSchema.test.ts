@@ -7,8 +7,8 @@ describe("job input schema", () => {
     expect(() =>
       schema.parse({
         name: "job",
-        command: ["/bin/echo", "hello"]
-      })
+        command: ["/bin/echo", "hello"],
+      }),
     ).toThrow();
   });
 
@@ -17,7 +17,7 @@ describe("job input schema", () => {
     const value = schema.parse({
       name: "job",
       command: ["/bin/echo", "hello"],
-      schedule: "0 2 * * *"
+      schedule: "0 2 * * *",
     });
     expect(value.name).toBe("job");
   });
@@ -27,7 +27,7 @@ describe("job input schema", () => {
     const value = schema.parse({
       name: "job",
       command: ["/bin/echo", "hello"],
-      runAt: "2026-02-01T10:00:00Z"
+      runAt: "2026-02-01T10:00:00Z",
     });
     expect(value.name).toBe("job");
   });

@@ -1,5 +1,5 @@
-import { existsSync, watch } from "node:fs";
 import type { FSWatcher } from "node:fs";
+import { existsSync, watch } from "node:fs";
 import type openDatabase from "../../db/openDatabase";
 import { jobs } from "../../db/schema";
 import formatJobRow from "../../shared/jobs/formatJobRow";
@@ -16,7 +16,11 @@ type Db = ReturnType<typeof openDatabase>["orm"];
 type Logger = ReturnType<typeof createLogger>;
 type Scheduler = ReturnType<typeof createScheduler>;
 
-export default function createJobsFileSync(db: Db, scheduler: Scheduler, logger: Logger) {
+export default function createJobsFileSync(
+  db: Db,
+  scheduler: Scheduler,
+  logger: Logger,
+) {
   let ignore = false;
   let watcher: FSWatcher | null = null;
 
@@ -37,7 +41,7 @@ export default function createJobsFileSync(db: Db, scheduler: Scheduler, logger:
         timezone: entry.timezone,
         timeoutMs: entry.timeout_ms,
         paused: entry.paused,
-        overlapPolicy: entry.overlap_policy
+        overlapPolicy: entry.overlap_policy,
       };
 
       const existingJob = existingByName.get(entry.name);
@@ -104,6 +108,6 @@ export default function createJobsFileSync(db: Db, scheduler: Scheduler, logger:
       } catch (error) {
         return { ok: false, error: String(error) };
       }
-    }
+    },
   };
 }

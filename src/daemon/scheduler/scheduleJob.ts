@@ -12,7 +12,7 @@ export default function scheduleJob(
   state: SchedulerState,
   db: Db,
   job: Job,
-  runScheduled: (job: Job) => void
+  runScheduled: (job: Job) => void,
 ) {
   if (job.paused) {
     return;
@@ -23,10 +23,8 @@ export default function scheduleJob(
     return;
   }
 
-  const cron = new Cron(
-    pattern,
-    { timezone: job.timezone ?? undefined },
-    () => runScheduled(job)
+  const cron = new Cron(pattern, { timezone: job.timezone ?? undefined }, () =>
+    runScheduled(job),
   );
 
   state.scheduled.set(job.id, cron);

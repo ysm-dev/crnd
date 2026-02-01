@@ -1,6 +1,6 @@
 import { defineCommand } from "citty";
-import createRpcClient from "../../shared/rpc/createRpcClient";
 import isOverlapPolicy from "../../shared/jobs/isOverlapPolicy";
+import createRpcClient from "../../shared/rpc/createRpcClient";
 import getCommandArgs from "./getCommandArgs";
 import parseEnvArgs from "./parseEnvArgs";
 
@@ -8,54 +8,54 @@ export default function createScheduleCommand() {
   return defineCommand({
     meta: {
       name: "schedule",
-      description: "Create or update a job"
+      description: "Create or update a job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       description: {
         type: "string",
-        alias: "d"
+        alias: "d",
       },
       schedule: {
         type: "string",
-        alias: "s"
+        alias: "s",
       },
       at: {
         type: "string",
-        alias: "a"
+        alias: "a",
       },
       timezone: {
         type: "string",
-        alias: "z"
+        alias: "z",
       },
       timeout: {
         type: "string",
-        alias: "t"
+        alias: "t",
       },
       paused: {
         type: "boolean",
-        alias: "p"
+        alias: "p",
       },
       overlap: {
         type: "string",
-        alias: "o"
+        alias: "o",
       },
       cwd: {
         type: "string",
-        alias: "c"
+        alias: "c",
       },
       env: {
         type: "string",
-        alias: "e"
+        alias: "e",
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const command = getCommandArgs(process.argv);
@@ -131,7 +131,10 @@ export default function createScheduleCommand() {
         return;
       }
 
-      const overlapPolicy = args.overlap && isOverlapPolicy(args.overlap) ? args.overlap : undefined;
+      const overlapPolicy =
+        args.overlap && isOverlapPolicy(args.overlap)
+          ? args.overlap
+          : undefined;
 
       const payload = {
         name: args.name,
@@ -144,7 +147,7 @@ export default function createScheduleCommand() {
         paused: args.paused,
         overlapPolicy,
         cwd: args.cwd,
-        env
+        env,
       };
 
       try {
@@ -176,6 +179,6 @@ export default function createScheduleCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

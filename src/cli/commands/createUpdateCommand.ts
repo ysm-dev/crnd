@@ -7,7 +7,7 @@ export default function createUpdateCommand() {
     meta: {
       ...base.meta,
       name: "update",
-      description: "Update a job"
-    }
+      description: "Update a job",
+    },
   };
 }

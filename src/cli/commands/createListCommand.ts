@@ -5,13 +5,13 @@ export default function createListCommand() {
   return defineCommand({
     meta: {
       name: "list",
-      description: "List scheduled jobs"
+      description: "List scheduled jobs",
     },
     args: {
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -62,6 +62,6 @@ export default function createListCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

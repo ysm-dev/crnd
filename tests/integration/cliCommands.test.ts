@@ -1,21 +1,21 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
-import createTempRoot from "../helpers/createTempRoot";
-import getSleepCommand from "../helpers/getSleepCommand";
-import runRootCommand from "../helpers/runRootCommand";
-import setXdgEnv from "../helpers/setXdgEnv";
-import createRpcClient from "../../src/shared/rpc/createRpcClient";
-import withTty from "../helpers/withTty";
-import openDatabase from "../../src/db/openDatabase";
-import migrateDatabase from "../../src/db/migrateDatabase";
 import createLogger from "../../src/daemon/createLogger";
 import createJobsFileSync from "../../src/daemon/jobs/createJobsFileSync";
 import createScheduler from "../../src/daemon/scheduler/createScheduler";
 import createApp from "../../src/daemon/server/createApp";
 import startServer from "../../src/daemon/server/startServer";
-import writeDaemonState from "../../src/shared/state/writeDaemonState";
+import migrateDatabase from "../../src/db/migrateDatabase";
+import openDatabase from "../../src/db/openDatabase";
+import createRpcClient from "../../src/shared/rpc/createRpcClient";
 import removeDaemonState from "../../src/shared/state/removeDaemonState";
+import writeDaemonState from "../../src/shared/state/writeDaemonState";
+import createTempRoot from "../helpers/createTempRoot";
+import getSleepCommand from "../helpers/getSleepCommand";
+import runRootCommand from "../helpers/runRootCommand";
+import setXdgEnv from "../helpers/setXdgEnv";
+import withTty from "../helpers/withTty";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -39,12 +39,12 @@ describe("cli commands", () => {
       {
         token,
         startedAt: new Date().toISOString(),
-        pid: 1
+        pid: 1,
       },
       orm,
       scheduler,
       jobsFileSync,
-      () => shutdown()
+      () => shutdown(),
     );
     const server = startServer(app);
     shutdown = () => {
@@ -61,7 +61,7 @@ describe("cli commands", () => {
       token,
       pid: 1,
       startedAt: new Date().toISOString(),
-      version: "0.0.0"
+      version: "0.0.0",
     });
   });
 
@@ -97,8 +97,8 @@ describe("cli commands", () => {
           "test cron",
           "--",
           "/bin/echo",
-          "hello"
-        ])
+          "hello",
+        ]),
       ).toBe(0);
 
       expect(
@@ -114,8 +114,8 @@ describe("cli commands", () => {
           "updated",
           "--",
           "/bin/echo",
-          "hello"
-        ])
+          "hello",
+        ]),
       ).toBe(0);
 
       expect(await runRootCommand(["list"])).toBe(0);
@@ -148,8 +148,8 @@ describe("cli commands", () => {
           "allow",
           "--",
           sleepCommand,
-          "5"
-        ])
+          "5",
+        ]),
       ).toBe(0);
       const waitForRunning = async () => {
         const client = createRpcClient();
@@ -159,7 +159,7 @@ describe("cli commands", () => {
         for (let attempt = 0; attempt < 10; attempt += 1) {
           const res = await client.jobs[":name"].runs.$get({
             param: { name: "sleepy" },
-            query: { limit: "1" }
+            query: { limit: "1" },
           });
           if (res.ok) {
             const list = await res.json();

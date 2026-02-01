@@ -1,8 +1,8 @@
+import appendEvent from "../shared/events/appendEvent";
+import removeDaemonState from "../shared/state/removeDaemonState";
 import type createLogger from "./createLogger";
 import type createJobsFileSync from "./jobs/createJobsFileSync";
 import type createScheduler from "./scheduler/createScheduler";
-import removeDaemonState from "../shared/state/removeDaemonState";
-import appendEvent from "../shared/events/appendEvent";
 
 type Logger = ReturnType<typeof createLogger>;
 type Server = ReturnType<typeof Bun.serve>;
@@ -13,7 +13,7 @@ export default function createShutdownHandler(
   server: Server,
   logger: Logger,
   scheduler: Scheduler,
-  jobsFileSync: JobsFileSync
+  jobsFileSync: JobsFileSync,
 ) {
   return () => {
     logger.info("daemon_shutdown");

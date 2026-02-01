@@ -6,8 +6,8 @@ import createShutdownHandler from "../../src/daemon/createShutdownHandler";
 import createJobsFileSync from "../../src/daemon/jobs/createJobsFileSync";
 import createScheduler from "../../src/daemon/scheduler/createScheduler";
 import startServer from "../../src/daemon/server/startServer";
-import openDatabase from "../../src/db/openDatabase";
 import migrateDatabase from "../../src/db/migrateDatabase";
+import openDatabase from "../../src/db/openDatabase";
 import getDaemonStatePath from "../../src/shared/state/getDaemonStatePath";
 import writeDaemonState from "../../src/shared/state/writeDaemonState";
 import createTempRoot from "../helpers/createTempRoot";
@@ -28,7 +28,7 @@ describe("shutdown handler", () => {
       token: "token",
       pid: 1,
       startedAt: new Date().toISOString(),
-      version: "0.0.0"
+      version: "0.0.0",
     });
 
     const exitCalls: number[] = [];
@@ -39,7 +39,12 @@ describe("shutdown handler", () => {
     };
     process.exit = exitFn;
 
-    const shutdown = createShutdownHandler(server, logger, scheduler, jobsFileSync);
+    const shutdown = createShutdownHandler(
+      server,
+      logger,
+      scheduler,
+      jobsFileSync,
+    );
     try {
       shutdown();
     } catch {

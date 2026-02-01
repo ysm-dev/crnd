@@ -5,18 +5,18 @@ export default function createShowCommand() {
   return defineCommand({
     meta: {
       name: "show",
-      description: "Show a job"
+      description: "Show a job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -32,7 +32,9 @@ export default function createShowCommand() {
       }
 
       try {
-        const res = await client.jobs[":name"].$get({ param: { name: args.name } });
+        const res = await client.jobs[":name"].$get({
+          param: { name: args.name },
+        });
         if (res.status === 404) {
           const payload = { status: "not_found" };
           if (!process.stdout.isTTY || args.json) {
@@ -85,6 +87,6 @@ export default function createShowCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

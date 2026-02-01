@@ -1,16 +1,16 @@
-import openDatabase from "../db/openDatabase";
 import migrateDatabase from "../db/migrateDatabase";
+import openDatabase from "../db/openDatabase";
 import createToken from "../shared/auth/createToken";
+import appendEvent from "../shared/events/appendEvent";
 import writeDaemonState from "../shared/state/writeDaemonState";
 import getVersion from "../shared/version";
 import createLogger from "./createLogger";
 import createShutdownHandler from "./createShutdownHandler";
 import createJobsFileSync from "./jobs/createJobsFileSync";
+import recoverRunningRuns from "./runner/recoverRunningRuns";
 import createScheduler from "./scheduler/createScheduler";
 import createApp from "./server/createApp";
 import startServer from "./server/startServer";
-import appendEvent from "../shared/events/appendEvent";
-import recoverRunningRuns from "./runner/recoverRunningRuns";
 
 export default function startDaemon() {
   const logger = createLogger();
@@ -20,7 +20,10 @@ export default function startDaemon() {
   const { orm } = openDatabase();
   const migrationResult = migrateDatabase(orm);
   if (!migrationResult.migrated) {
-    logger.warn({ event: "migrations_skipped", reason: migrationResult.reason });
+    logger.warn({
+      event: "migrations_skipped",
+      reason: migrationResult.reason,
+    });
   }
   recoverRunningRuns(orm);
   const scheduler = createScheduler(orm);
@@ -33,7 +36,7 @@ export default function startDaemon() {
     orm,
     scheduler,
     jobsFileSync,
-    () => shutdown()
+    () => shutdown(),
   );
   const server = startServer(app);
   const port = server.port;
@@ -46,7 +49,7 @@ export default function startDaemon() {
     token,
     pid,
     startedAt,
-    version: getVersion()
+    version: getVersion(),
   });
 
   appendEvent("daemon_started", { pid });

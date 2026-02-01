@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import path from "node:path";
-import getDaemonInstallArgs from "../../src/daemon/autostart/getDaemonInstallArgs";
 import getDaemonServiceArgs from "../../src/cli/commands/daemon/getDaemonServiceArgs";
 import getDaemonSpawnArgs from "../../src/cli/getDaemonSpawnArgs";
+import getDaemonInstallArgs from "../../src/daemon/autostart/getDaemonInstallArgs";
 
 describe("daemon arg builders", () => {
   test("uses script path when ts file", () => {

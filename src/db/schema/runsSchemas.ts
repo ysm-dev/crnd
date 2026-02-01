@@ -5,6 +5,6 @@ export default function createRunsSchemas() {
   const runs = getRunsTable();
   return {
     insert: createInsertSchema(runs),
-    select: createSelectSchema(runs)
+    select: createSelectSchema(runs),
   };
 }

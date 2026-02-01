@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, rmSync } from "node:fs";
-import getJobsTomlPath from "../../src/shared/paths/getJobsTomlPath";
 import readJobsToml from "../../src/shared/jobs/readJobsToml";
+import getJobsTomlPath from "../../src/shared/paths/getJobsTomlPath";
 import createTempRoot from "../helpers/createTempRoot";
 import setXdgEnv from "../helpers/setXdgEnv";
 
@@ -21,7 +21,10 @@ describe("readJobsToml", () => {
     const root = createTempRoot();
     const restore = setXdgEnv(root);
     const path = getJobsTomlPath();
-    await Bun.write(path, "[jobs.test]\ncommand = [\"/bin/echo\", \"hi\"]\nschedule = \"*/1 * * * *\"\n");
+    await Bun.write(
+      path,
+      '[jobs.test]\ncommand = ["/bin/echo", "hi"]\nschedule = "*/1 * * * *"\n',
+    );
     const jobs = readJobsToml();
     expect(jobs[0]?.name).toBe("test");
     restore();

@@ -19,8 +19,8 @@ export default function parseJobsToml(content: string) {
 
   const namedSchema = createTomlJobSchema().and(
     z.object({
-      name: z.string().min(1)
-    })
+      name: z.string().min(1),
+    }),
   );
   const result: Array<z.infer<typeof namedSchema>> = [];
 

@@ -6,8 +6,8 @@ export default function createLogger() {
       {
         log: (logObj) => {
           console.log(JSON.stringify(logObj));
-        }
-      }
-    ]
+        },
+      },
+    ],
   });
 }

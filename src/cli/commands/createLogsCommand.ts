@@ -6,22 +6,22 @@ export default function createLogsCommand() {
   return defineCommand({
     meta: {
       name: "logs",
-      description: "Show latest run logs for a job"
+      description: "Show latest run logs for a job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       show: {
         type: "boolean",
-        alias: "s"
+        alias: "s",
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -39,7 +39,7 @@ export default function createLogsCommand() {
       try {
         const res = await client.jobs[":name"].runs.$get({
           param: { name: args.name },
-          query: { limit: "1" }
+          query: { limit: "1" },
         });
         if (res.status === 404) {
           const payload = { status: "not_found" };
@@ -120,6 +120,6 @@ export default function createLogsCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

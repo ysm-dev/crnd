@@ -15,7 +15,7 @@ export default function createJobInputSchema() {
       timezone: z.string().min(1).optional(),
       timeoutMs: z.number().int().positive().optional(),
       paused: z.boolean().optional(),
-      overlapPolicy: z.enum(["skip", "allow"]).optional()
+      overlapPolicy: z.enum(["skip", "allow"]).optional(),
     })
     .superRefine((value, ctx) => {
       const hasSchedule = Boolean(value.schedule);
@@ -24,7 +24,7 @@ export default function createJobInputSchema() {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Provide schedule or runAt",
-          path: ["schedule"]
+          path: ["schedule"],
         });
       }
     });

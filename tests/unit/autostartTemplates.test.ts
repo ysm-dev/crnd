@@ -10,18 +10,26 @@ describe("autostart templates", () => {
   });
 
   test("quote windows args", () => {
-    expect(quoteWindowsArg("hello world")).toBe("\"hello world\"");
-    expect(quoteWindowsArg("a\"b")).toBe("\"a\\\"b\"");
+    expect(quoteWindowsArg("hello world")).toBe('"hello world"');
+    expect(quoteWindowsArg('a"b')).toBe('"a\\"b"');
   });
 
   test("launchd plist", () => {
-    const plist = createLaunchdPlist(["/bin/echo", "hi"], "/tmp/out", "/tmp/err");
+    const plist = createLaunchdPlist(
+      ["/bin/echo", "hi"],
+      "/tmp/out",
+      "/tmp/err",
+    );
     expect(plist.includes("ProgramArguments")).toBe(true);
     expect(plist.includes("/bin/echo")).toBe(true);
   });
 
   test("systemd service", () => {
-    const service = createSystemdService(["/bin/echo", "hi"], "/tmp/out", "/tmp/err");
+    const service = createSystemdService(
+      ["/bin/echo", "hi"],
+      "/tmp/out",
+      "/tmp/err",
+    );
     expect(service.includes("ExecStart=/bin/echo hi")).toBe(true);
     expect(service.includes("StandardOutput=append:/tmp/out")).toBe(true);
   });

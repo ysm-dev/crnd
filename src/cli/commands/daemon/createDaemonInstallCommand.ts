@@ -12,13 +12,13 @@ export default function createDaemonInstallCommand() {
   return defineCommand({
     meta: {
       name: "install",
-      description: "Install auto-start service"
+      description: "Install auto-start service",
     },
     args: {
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     run({ args }) {
       if (process.env.CRND_AUTOSTART_DRY_RUN === "1") {
@@ -41,13 +41,13 @@ export default function createDaemonInstallCommand() {
           os.homedir(),
           "Library",
           "LaunchAgents",
-          "com.crnd.daemon.plist"
+          "com.crnd.daemon.plist",
         );
         mkdirSync(path.dirname(plistPath), { recursive: true });
         writeFileSync(
           plistPath,
           createLaunchdPlist(daemonArgs, stdoutPath, stderrPath),
-          "utf-8"
+          "utf-8",
         );
         Bun.spawnSync(["launchctl", "unload", plistPath]);
         const result = Bun.spawnSync(["launchctl", "load", plistPath]);
@@ -56,7 +56,9 @@ export default function createDaemonInstallCommand() {
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify({ ok, path: plistPath }));
         } else {
-          console.log(ok ? `daemon: installed (${plistPath})` : "daemon: install failed");
+          console.log(
+            ok ? `daemon: installed (${plistPath})` : "daemon: install failed",
+          );
         }
         if (!ok) {
           process.exitCode = 1;
@@ -70,13 +72,13 @@ export default function createDaemonInstallCommand() {
           ".config",
           "systemd",
           "user",
-          "crnd.service"
+          "crnd.service",
         );
         mkdirSync(path.dirname(servicePath), { recursive: true });
         writeFileSync(
           servicePath,
           createSystemdService(daemonArgs, stdoutPath, stderrPath),
-          "utf-8"
+          "utf-8",
         );
         Bun.spawnSync(["systemctl", "--user", "daemon-reload"]);
         const result = Bun.spawnSync([
@@ -84,13 +86,17 @@ export default function createDaemonInstallCommand() {
           "--user",
           "enable",
           "--now",
-          "crnd.service"
+          "crnd.service",
         ]);
         const ok = result.success;
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify({ ok, path: servicePath }));
         } else {
-          console.log(ok ? `daemon: installed (${servicePath})` : "daemon: install failed");
+          console.log(
+            ok
+              ? `daemon: installed (${servicePath})`
+              : "daemon: install failed",
+          );
         }
         if (!ok) {
           process.exitCode = 1;
@@ -110,13 +116,15 @@ export default function createDaemonInstallCommand() {
           "/TN",
           taskName,
           "/TR",
-          taskCommand
+          taskCommand,
         ]);
         const ok = result.success;
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify({ ok, task: taskName }));
         } else {
-          console.log(ok ? `daemon: installed (${taskName})` : "daemon: install failed");
+          console.log(
+            ok ? `daemon: installed (${taskName})` : "daemon: install failed",
+          );
         }
         if (!ok) {
           process.exitCode = 1;
@@ -131,6 +139,6 @@ export default function createDaemonInstallCommand() {
         console.log("daemon: unsupported platform");
       }
       process.exitCode = 1;
-    }
+    },
   });
 }

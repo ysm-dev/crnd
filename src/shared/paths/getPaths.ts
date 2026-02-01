@@ -8,7 +8,7 @@ export default function getPaths() {
       config: root,
       cache: root,
       log: root,
-      temp: root
+      temp: root,
     };
   }
 

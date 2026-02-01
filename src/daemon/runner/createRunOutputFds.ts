@@ -1,6 +1,9 @@
 import { closeSync, openSync } from "node:fs";
 
-export default function createRunOutputFds(stdoutPath: string, stderrPath: string) {
+export default function createRunOutputFds(
+  stdoutPath: string,
+  stderrPath: string,
+) {
   const stdoutFd = openSync(stdoutPath, "a");
   const stderrFd = openSync(stderrPath, "a");
 
@@ -10,6 +13,6 @@ export default function createRunOutputFds(stdoutPath: string, stderrPath: strin
     close() {
       closeSync(stdoutFd);
       closeSync(stderrFd);
-    }
+    },
   };
 }

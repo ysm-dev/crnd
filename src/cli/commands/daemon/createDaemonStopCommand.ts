@@ -5,13 +5,13 @@ export default function createDaemonStopCommand() {
   return defineCommand({
     meta: {
       name: "stop",
-      description: "Stop the crnd daemon"
+      description: "Stop the crnd daemon",
     },
     args: {
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       const client = createRpcClient();
@@ -54,6 +54,6 @@ export default function createDaemonStopCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }

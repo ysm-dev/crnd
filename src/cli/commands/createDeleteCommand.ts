@@ -5,22 +5,22 @@ export default function createDeleteCommand() {
   return defineCommand({
     meta: {
       name: "delete",
-      description: "Delete a job"
+      description: "Delete a job",
     },
     args: {
       name: {
         type: "string",
         alias: "n",
-        required: true
+        required: true,
       },
       force: {
         type: "boolean",
-        alias: "f"
+        alias: "f",
       },
       json: {
         type: "boolean",
-        alias: "j"
-      }
+        alias: "j",
+      },
     },
     async run({ args }) {
       if (!args.force) {
@@ -47,7 +47,9 @@ export default function createDeleteCommand() {
       }
 
       try {
-        const res = await client.jobs[":name"].$delete({ param: { name: args.name } });
+        const res = await client.jobs[":name"].$delete({
+          param: { name: args.name },
+        });
         if (res.status === 404) {
           const payload = { status: "not_found" };
           if (!process.stdout.isTTY || args.json) {
@@ -86,6 +88,6 @@ export default function createDeleteCommand() {
         }
         process.exitCode = 3;
       }
-    }
+    },
   });
 }
