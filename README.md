@@ -1,181 +1,108 @@
 # crnd
 
-Agent-first CLI for cron scheduling and process management.
-
-crnd runs real OS processes on a stable per-user daemon, stores state in SQLite, and keeps a human-editable `jobs.toml` as source of truth. It is zero-config by default and compiles to a single Bun binary for Linux, macOS, and Windows.
+Cron daemon built for agents. JSON output, no prompts, real OS processes.
 
 ## Install
 
 ```sh
+# npm/bun
+bunx crnd
+
+# or homebrew
 brew install ysm-dev/crnd/crnd
 ```
 
+## 30 seconds to your first job
+
+```sh
+# start daemon (happens automatically, but let's be explicit)
+crnd daemon start
+
+# schedule a backup at 2am UTC daily
+crnd schedule -n backup -s "0 2 * * *" -- rsync -a ~/docs ~/backup
+
+# run it now
+crnd run-once -n backup
+
+# check status
+crnd status -n backup
+```
+
+That's it. Job definitions live in `~/.config/crnd/jobs.toml` - edit it directly and the daemon picks up changes.
+
 ## Why crnd
-- Agent-first: non-interactive CLI, JSON output for automation.
-- Local-only: no cloud, no Docker, no remote dependencies.
-- Stable: separate OS process per job, zombie-safe tracking, recovery on restart.
-- Hybrid storage: SQLite for state + runs, TOML for readability.
-- Cross-platform: Bun single binary and OS-native autostart.
 
-## Quickstart
+Most cron tools are built for humans clicking around. crnd is built for scripts and agents that need to:
 
-Prerequisites: Bun
+- Schedule jobs without interactive prompts
+- Parse structured output (`crnd list --json`)
+- Stream logs from running processes
+- Kill/stop jobs by name
+- Trust that jobs run as real OS processes (not some container abstraction)
 
-```sh
-bun install
+Everything runs locally. No cloud, no Docker, no account, no network calls.
 
-# Start the daemon on demand
-bun run src/cli/main.ts daemon start
-
-# Schedule a cron job (UTC, 2am daily)
-bun run src/cli/main.ts schedule -n backup -s "0 2 * * *" -z "UTC" -- /usr/bin/rsync -a /src /dst
-
-# Run once immediately
-bun run src/cli/main.ts run-once -n backup
-
-# Inspect
-bun run src/cli/main.ts list
-bun run src/cli/main.ts status -n backup
-bun run src/cli/main.ts runs -n backup -l 5
-bun run src/cli/main.ts logs -n backup -s
-```
-
-Build a single binary:
+## Commands
 
 ```sh
-bun run build
-./dist/crnd status
+crnd schedule -n NAME -s "CRON" -- command args   # create/update job
+crnd schedule -n NAME -a "ISO_TIMESTAMP" -- cmd   # one-time job
+crnd list                                         # all jobs
+crnd status -n NAME                               # job details
+crnd runs -n NAME                                 # run history
+crnd logs -n NAME -s                              # stream stdout/stderr
+crnd run-once -n NAME                             # trigger now
+crnd pause -n NAME                                # pause scheduling
+crnd resume -n NAME                               # resume
+crnd stop -n NAME                                 # graceful stop (SIGTERM)
+crnd kill -n NAME                                 # hard kill (SIGKILL)
+crnd delete -n NAME -f                            # remove job
+crnd export                                       # dump jobs.toml
+crnd import -f jobs.toml                          # load jobs
+crnd daemon install                               # autostart on login
+crnd doctor                                       # check setup
 ```
 
-## Key features
-- Verb-first CLI with shorthands.
-- Cron and one-time schedules (no natural language parsing).
-- Timezone-aware cron (5-field standard).
-- Per-run stdout/stderr files (agent friendly).
-- Pause/resume/stop/kill/reset and run history.
-- Autostart install for user session (launchd, systemd user, Task Scheduler).
-
-## Command overview
-
-```sh
-crnd schedule -n <name> -s "0 2 * * *" -z "UTC" -- /path/to/cmd arg1 arg2
-crnd schedule -n <name> -a "2026-02-01T10:00:00Z" -- /path/to/cmd
-
-crnd list
-crnd show -n <name>
-crnd update -n <name> ...
-crnd delete -n <name> -f
-
-crnd pause -n <name>
-crnd resume -n <name>
-crnd reset -n <name>
-
-crnd run-once -n <name>
-crnd stop -n <name>
-crnd kill -n <name>
-
-crnd runs -n <name> -l 20
-crnd logs -n <name>
-crnd logs -n <name> -s
-
-crnd export -o jobs.toml
-crnd import -f jobs.toml
-
-crnd status
-crnd status -n <name>
-crnd doctor
-
-crnd daemon start|stop|status|install|uninstall|serve
-```
+All commands support `--json` for machine-readable output.
 
 ## jobs.toml
 
-Location (XDG):
-- macOS: `~/Library/Application Support/crnd/jobs.toml`
-- Linux: `~/.config/crnd/jobs.toml`
-- Windows: `%APPDATA%\crnd\jobs.toml`
-
-Example:
-
 ```toml
 [jobs.backup]
-id = "01J8Z7KX2B6QJ1J4F6T3M0H0S1"
-command = ["/usr/bin/rsync", "-a", "/src", "/dst"]
+command = ["rsync", "-a", "/src", "/dst"]
 schedule = "0 2 * * *"
 timezone = "UTC"
 timeout_ms = 600000
-paused = false
 
-[jobs.oneoff]
-command = ["/usr/bin/echo", "hello"]
+[jobs.deploy]
+command = ["./deploy.sh"]
 run_at = "2026-02-01T10:00:00Z"
-timezone = "UTC"
 ```
 
-Editing `jobs.toml` updates the daemon automatically. The daemon also writes updates back to the file.
+Edit this file directly. The daemon watches it and syncs automatically.
 
-## Logs and events
+**Paths:**
+- macOS: `~/Library/Application Support/crnd/`
+- Linux: `~/.config/crnd/`
+- Windows: `%APPDATA%\crnd\`
 
-Per-run stdout/stderr:
-- `state/runs/<jobId>/<runId>.out`
-- `state/runs/<jobId>/<runId>.err`
+## How it works
 
-Event stream:
-- `state/events.jsonl` (structured JSONL)
-
-## Autostart
-
-Manual install:
-
-```sh
-crnd daemon install
-crnd daemon uninstall
-```
-
-crnd also attempts to install autostart on the first job creation.
-To disable that behavior:
-
-```sh
-CRND_DISABLE_AUTOSTART=1 crnd schedule ...
-```
-
-## Design choices
-- Separate OS process per run (safe kill/stop).
-- No shell strings: commands are argv arrays only.
-- SQLite for state, TOML for human edits.
-- Hono RPC for end-to-end type safety.
-
-## Project structure
-- `src/cli`: CLI commands (Citty)
-- `src/daemon`: daemon, scheduler, runner
-- `src/db`: Drizzle schema + migrations
-- `src/shared`: paths, schemas, serialization
+- Each job spawns a real OS process via `Bun.spawn`
+- State lives in SQLite, job definitions in TOML
+- Daemon runs per-user, binds to `127.0.0.1`
+- Autostart via launchd (macOS), systemd user (Linux), or Task Scheduler (Windows)
+- Stdout/stderr saved per-run in `state/runs/<jobId>/<runId>.out|.err`
 
 ## Development
 
 ```sh
-bun run dev
-bun run lint
-bun run typecheck
+bun install
+bun run dev          # start daemon in dev mode
+bun run build        # compile single binary
 bun test
 ```
 
-Typecheck uses `tsgo` from `@typescript/native-preview`.
-
-## CI and releases
-- Biome lint/check, tsgo typecheck, and bun test on Linux + macOS.
-- Release automation via release-please.
-
-## FAQ
-
-Q: Is this a replacement for system cron?
-A: It is a user-level, local scheduler with richer control and run history.
-
-Q: Does it run as root?
-A: No, it runs as the current user and manages per-user jobs.
-
-Q: Can I store secrets?
-A: Provide env vars at schedule time; nothing is sent off machine.
-
 ## License
+
 MIT

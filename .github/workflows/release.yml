@@ -1,45 +1,109 @@
-name: release
+name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  release-please:
-    runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-    steps:
-      - uses: googleapis/release-please-action@v4
-        id: release
-        with:
-          release-type: node
-          package-name: crnd
-
   build:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-      - name: Install
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
         run: bun install
-      - name: Build
-        run: bun run build
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: crnd-${{ matrix.os }}
-          path: dist/
+
+      - name: Build binaries
+        run: |
+          mkdir -p dist
+
+          # Build for each target
+          bun build ./src/cli/main.ts --compile --target=bun-darwin-arm64 --outfile dist/crnd-darwin-arm64
+          bun build ./src/cli/main.ts --compile --target=bun-darwin-x64 --outfile dist/crnd-darwin-x64
+          bun build ./src/cli/main.ts --compile --target=bun-linux-arm64 --outfile dist/crnd-linux-arm64
+          bun build ./src/cli/main.ts --compile --target=bun-linux-x64 --outfile dist/crnd-linux-x64
+
+      - name: Create tarballs
+        run: |
+          cd dist
+          for bin in crnd-darwin-arm64 crnd-darwin-x64 crnd-linux-arm64 crnd-linux-x64; do
+            mv "$bin" crnd
+            tar -czvf "${bin}.tar.gz" crnd
+            rm crnd
+          done
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            dist/*.tar.gz
+
+      - name: Update Homebrew formula
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Calculate SHA256 for each tarball
+          SHA_DARWIN_ARM64=$(sha256sum dist/crnd-darwin-arm64.tar.gz | cut -d ' ' -f1)
+          SHA_DARWIN_X64=$(sha256sum dist/crnd-darwin-x64.tar.gz | cut -d ' ' -f1)
+          SHA_LINUX_ARM64=$(sha256sum dist/crnd-linux-arm64.tar.gz | cut -d ' ' -f1)
+          SHA_LINUX_X64=$(sha256sum dist/crnd-linux-x64.tar.gz | cut -d ' ' -f1)
+
+          # Clone homebrew tap
+          git clone https://x-access-token:${GH_TOKEN}@github.com/ysm-dev/homebrew-crnd.git /tmp/homebrew-crnd
+          cd /tmp/homebrew-crnd
+
+          # Update formula
+          cat > Formula/crnd.rb << EOF
+          class Crnd < Formula
+            desc "Agent-first CLI for cron scheduling and process management"
+            homepage "https://github.com/ysm-dev/crnd"
+            license "MIT"
+            version "${VERSION}"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/ysm-dev/crnd/releases/download/v#{version}/crnd-darwin-arm64.tar.gz"
+                sha256 "${SHA_DARWIN_ARM64}"
+              else
+                url "https://github.com/ysm-dev/crnd/releases/download/v#{version}/crnd-darwin-x64.tar.gz"
+                sha256 "${SHA_DARWIN_X64}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "https://github.com/ysm-dev/crnd/releases/download/v#{version}/crnd-linux-arm64.tar.gz"
+                sha256 "${SHA_LINUX_ARM64}"
+              else
+                url "https://github.com/ysm-dev/crnd/releases/download/v#{version}/crnd-linux-x64.tar.gz"
+                sha256 "${SHA_LINUX_X64}"
+              end
+            end
+
+            def install
+              bin.install "crnd"
+            end
+
+            test do
+              assert_match "crnd", shell_output("#{bin}/crnd --version")
+            end
+          end
+          EOF
+
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/crnd.rb
+          git commit -m "Update crnd to ${VERSION}"
+          git push
