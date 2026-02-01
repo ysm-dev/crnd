@@ -14,5 +14,7 @@ export default async function runRootCommand(rawArgs: string[]) {
     process.argv = originalArgv;
   }
 
-  return process.exitCode ?? 0;
+  const code = process.exitCode ?? 0;
+  process.exitCode = 0;
+  return code;
 }
