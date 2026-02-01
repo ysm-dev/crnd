@@ -1,11 +1,15 @@
 {
   "name": "crnd",
   "version": "0.0.1",
+  "description": "Agent-first CLI for cron scheduling and process management",
   "type": "module",
-  "private": true,
   "bin": {
-    "crnd": "dist/crnd"
+    "crnd": "src/cli/main.ts"
   },
+  "files": [
+    "src",
+    "drizzle"
+  ],
   "scripts": {
     "dev": "bun run src/cli/main.ts",
     "build": "bun build ./src/cli/main.ts --compile --outfile dist/crnd",
@@ -15,6 +19,24 @@
     "typecheck": "tsgo --noEmit",
     "test": "bun test"
   },
+  "keywords": [
+    "cron",
+    "scheduler",
+    "daemon",
+    "jobs",
+    "cli",
+    "process-manager"
+  ],
+  "author": "ysm-dev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ysm-dev/crnd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ysm-dev/crnd/issues"
+  },
+  "homepage": "https://github.com/ysm-dev/crnd#readme",
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
     "@iarna/toml": "^2.2.5",

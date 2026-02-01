@@ -47,6 +47,13 @@ jobs:
             --generate-notes \
             dist/*.tar.gz
 
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public
+
       - name: Update Homebrew formula
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
