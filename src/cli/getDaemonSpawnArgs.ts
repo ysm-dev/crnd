@@ -1,9 +1,9 @@
 export default function getDaemonSpawnArgs() {
-  const [execPath, scriptPath] = process.argv;
+  const scriptPath = process.argv[1];
 
   if (scriptPath?.endsWith(".ts")) {
-    return [execPath, scriptPath, "daemon", "serve"];
+    return [process.execPath, scriptPath, "daemon", "serve"];
   }
 
-  return [execPath, "daemon", "serve"];
+  return [process.execPath, "daemon", "serve"];
 }

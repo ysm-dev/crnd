@@ -1,10 +1,10 @@
 import path from "node:path";
 
 export default function getDaemonServiceArgs() {
-  const [execPath, scriptPath] = process.argv;
+  const scriptPath = process.argv[1];
   if (scriptPath?.endsWith(".ts")) {
-    return [execPath, path.resolve(scriptPath), "daemon", "serve"];
+    return [process.execPath, path.resolve(scriptPath), "daemon", "serve"];
   }
 
-  return [execPath, "daemon", "serve"];
+  return [process.execPath, "daemon", "serve"];
 }
