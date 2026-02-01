@@ -1,0 +1,9 @@
+{
+  "release-type": "node",
+  "packages": {
+    ".": {
+      "package-name": "crnd"
+    }
+  },
+  "bump-minor-pre-major": true
+}
