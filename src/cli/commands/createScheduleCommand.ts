@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import isOverlapPolicy from "../../shared/jobs/isOverlapPolicy";
 import createRpcClient from "../../shared/rpc/createRpcClient";
+import formatApiError from "../errors/formatApiError";
 import getCommandArgs from "./getCommandArgs";
 import parseEnvArgs from "./parseEnvArgs";
 
@@ -60,11 +61,27 @@ export default function createScheduleCommand() {
     async run({ args }) {
       const command = getCommandArgs(process.argv);
       if (command.length === 0) {
-        const payload = { status: "missing_command" };
+        const payload = {
+          status: "validation_error",
+          code: 400,
+          message: "Missing command",
+          errors: [
+            {
+              field: "command",
+              message: "Command is required. Provide the command after --",
+            },
+          ],
+        };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("schedule: missing command after --");
+          console.log("schedule: validation failed");
+          console.log(
+            "  command: Command is required. Provide the command after --",
+          );
+          console.log(
+            "  Example: crnd schedule -n myjob -s '0 * * * *' -- /bin/echo hello",
+          );
         }
         process.exitCode = 2;
         return;
@@ -72,11 +89,12 @@ export default function createScheduleCommand() {
 
       const client = createRpcClient();
       if (!client) {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("schedule: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
         return;
@@ -85,23 +103,52 @@ export default function createScheduleCommand() {
       let env: Record<string, string> | undefined;
       try {
         env = parseEnvArgs(args.env);
-      } catch {
-        const payload = { status: "invalid_env" };
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "Invalid format";
+        const payload = {
+          status: "validation_error",
+          code: 400,
+          message: "Invalid environment variable",
+          errors: [
+            {
+              field: "env",
+              message: `${errorMessage}. Use KEY=VALUE format`,
+              received: args.env,
+            },
+          ],
+        };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("schedule: invalid env");
+          console.log("schedule: validation failed");
+          console.log(`  env: ${errorMessage}. Use KEY=VALUE format`);
+          console.log("  Example: -e FOO=bar -e BAZ=qux");
         }
         process.exitCode = 2;
         return;
       }
       const timeoutMs = args.timeout ? Number(args.timeout) : undefined;
       if (args.timeout && Number.isNaN(timeoutMs)) {
-        const payload = { status: "invalid_timeout" };
+        const payload = {
+          status: "validation_error",
+          code: 400,
+          message: "Invalid timeout",
+          errors: [
+            {
+              field: "timeout",
+              message: "Timeout must be a number (milliseconds)",
+              received: args.timeout,
+            },
+          ],
+        };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("schedule: invalid timeout");
+          console.log("schedule: validation failed");
+          console.log(
+            `  timeout: Must be a number (milliseconds), received "${args.timeout}"`,
+          );
+          console.log("  Example: -t 60000 (for 60 seconds)");
         }
         process.exitCode = 2;
         return;
@@ -110,22 +157,48 @@ export default function createScheduleCommand() {
       const hasSchedule = Boolean(args.schedule);
       const hasRunAt = Boolean(args.at);
       if (hasSchedule === hasRunAt) {
-        const payload = { status: "invalid_schedule" };
+        const message = hasSchedule
+          ? "Provide either -s (schedule) or -a (at), not both"
+          : "Missing schedule. Use -s for cron or -a for one-time run";
+        const payload = {
+          status: "validation_error",
+          code: 400,
+          message: "Invalid schedule",
+          errors: [{ field: "schedule", message }],
+        };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("schedule: provide schedule or at");
+          console.log("schedule: validation failed");
+          console.log(`  schedule: ${message}`);
+          console.log("  Examples:");
+          console.log("    Cron:    -s '0 2 * * *' (daily at 2am)");
+          console.log("    One-time: -a '2026-02-01T10:00:00Z'");
         }
         process.exitCode = 2;
         return;
       }
 
       if (args.overlap && !isOverlapPolicy(args.overlap)) {
-        const payload = { status: "invalid_overlap" };
+        const payload = {
+          status: "validation_error",
+          code: 400,
+          message: "Invalid overlap policy",
+          errors: [
+            {
+              field: "overlap",
+              message: 'Overlap policy must be "skip" or "allow"',
+              received: args.overlap,
+            },
+          ],
+        };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("schedule: invalid overlap policy");
+          console.log("schedule: validation failed");
+          console.log(
+            `  overlap: Must be "skip" or "allow", received "${args.overlap}"`,
+          );
         }
         process.exitCode = 2;
         return;
@@ -153,11 +226,14 @@ export default function createScheduleCommand() {
       try {
         const res = await client.jobs.$post({ json: payload });
         if (!res.ok) {
-          const errorPayload = { status: "error", code: res.status };
+          const { payload: errorPayload, message } = await formatApiError(
+            res,
+            "schedule",
+          );
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(errorPayload));
           } else {
-            console.log(`schedule: error (${res.status})`);
+            console.log(message);
           }
           process.exitCode = 1;
           return;
@@ -171,11 +247,12 @@ export default function createScheduleCommand() {
 
         console.log(`job: ${data.name} (${data.id})`);
       } catch {
-        const payload = { status: "unreachable" };
+        const errorPayload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
-          console.log(JSON.stringify(payload));
+          console.log(JSON.stringify(errorPayload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("schedule: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
       }

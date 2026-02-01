@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { defineCommand } from "citty";
 import createRpcClient from "../../shared/rpc/createRpcClient";
+import formatApiError from "../errors/formatApiError";
 
 export default function createLogsCommand() {
   return defineCommand({
@@ -26,11 +27,12 @@ export default function createLogsCommand() {
     async run({ args }) {
       const client = createRpcClient();
       if (!client) {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("logs: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
         return;
@@ -42,22 +44,27 @@ export default function createLogsCommand() {
           query: { limit: "1" },
         });
         if (res.status === 404) {
-          const payload = { status: "not_found" };
+          const payload = {
+            status: "not_found",
+            code: 404,
+            message: `Job "${args.name}" not found`,
+          };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("logs: job not found");
+            console.log(`logs: job "${args.name}" not found`);
+            console.log("  List available jobs with: crnd list");
           }
           process.exitCode = 1;
           return;
         }
 
         if (!res.ok) {
-          const payload = { status: "error", code: res.status };
+          const { payload, message } = await formatApiError(res, "logs");
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log(`logs: error (${res.status})`);
+            console.log(message);
           }
           process.exitCode = 1;
           return;
@@ -65,11 +72,16 @@ export default function createLogsCommand() {
 
         const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) {
-          const payload = { status: "no_runs" };
+          const payload = {
+            status: "no_runs",
+            code: 200,
+            message: `Job "${args.name}" has no runs yet`,
+          };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("logs: no runs");
+            console.log(`logs: job "${args.name}" has no runs yet`);
+            console.log(`  Trigger a run with: crnd run-once -n ${args.name}`);
           }
           return;
         }
@@ -100,7 +112,7 @@ export default function createLogsCommand() {
             console.log("-- stdout --");
             console.log(readFileSync(run.stdoutPath, "utf-8"));
           } catch {
-            console.log("logs: stdout missing");
+            console.log("logs: stdout file missing");
           }
         }
         if (run.stderrPath) {
@@ -108,15 +120,16 @@ export default function createLogsCommand() {
             console.log("-- stderr --");
             console.log(readFileSync(run.stderrPath, "utf-8"));
           } catch {
-            console.log("logs: stderr missing");
+            console.log("logs: stderr file missing");
           }
         }
       } catch {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("logs: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
       }

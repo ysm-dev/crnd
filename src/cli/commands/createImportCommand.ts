@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { defineCommand } from "citty";
 import createRpcClient from "../../shared/rpc/createRpcClient";
+import formatApiError from "../errors/formatApiError";
 
 export default function createImportCommand() {
   return defineCommand({
@@ -22,11 +23,12 @@ export default function createImportCommand() {
     async run({ args }) {
       const client = createRpcClient();
       if (!client) {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("import: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
         return;
@@ -36,11 +38,22 @@ export default function createImportCommand() {
       try {
         toml = readFileSync(args.file, "utf-8");
       } catch {
-        const payload = { status: "missing_file" };
+        const payload = {
+          status: "file_not_found",
+          code: 400,
+          message: `Could not read file: ${args.file}`,
+          errors: [
+            {
+              field: "file",
+              message: `File not found or not readable: ${args.file}`,
+            },
+          ],
+        };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("import: failed to read file");
+          console.log(`import: could not read file "${args.file}"`);
+          console.log("  Ensure the file exists and is readable");
         }
         process.exitCode = 2;
         return;
@@ -49,11 +62,11 @@ export default function createImportCommand() {
       try {
         const res = await client.import.$post({ json: { toml } });
         if (!res.ok) {
-          const payload = { status: "error", code: res.status };
+          const { payload, message } = await formatApiError(res, "import");
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log(`import: error (${res.status})`);
+            console.log(message);
           }
           process.exitCode = 1;
           return;
@@ -67,11 +80,12 @@ export default function createImportCommand() {
 
         console.log("import: ok");
       } catch {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("import: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
       }

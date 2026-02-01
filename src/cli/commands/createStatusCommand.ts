@@ -1,5 +1,6 @@
 import { defineCommand } from "citty";
 import createRpcClient from "../../shared/rpc/createRpcClient";
+import formatApiError from "../errors/formatApiError";
 
 export default function createStatusCommand() {
   return defineCommand({
@@ -21,11 +22,12 @@ export default function createStatusCommand() {
       if (args.name) {
         const client = createRpcClient();
         if (!client) {
-          const payload = { status: "unreachable" };
+          const payload = { status: "daemon_unreachable", code: 503 };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("daemon: unreachable");
+            console.log("status: daemon unreachable");
+            console.log("  Start the daemon with: crnd daemon start");
           }
           process.exitCode = 3;
           return;
@@ -36,22 +38,27 @@ export default function createStatusCommand() {
             param: { name: args.name },
           });
           if (jobRes.status === 404) {
-            const payload = { status: "not_found" };
+            const payload = {
+              status: "not_found",
+              code: 404,
+              message: `Job "${args.name}" not found`,
+            };
             if (!process.stdout.isTTY || args.json) {
               console.log(JSON.stringify(payload));
             } else {
-              console.log("status: job not found");
+              console.log(`status: job "${args.name}" not found`);
+              console.log("  List available jobs with: crnd list");
             }
             process.exitCode = 1;
             return;
           }
 
           if (!jobRes.ok) {
-            const payload = { status: "error", code: jobRes.status };
+            const { payload, message } = await formatApiError(jobRes, "status");
             if (!process.stdout.isTTY || args.json) {
               console.log(JSON.stringify(payload));
             } else {
-              console.log(`status: error (${jobRes.status})`);
+              console.log(message);
             }
             process.exitCode = 1;
             return;
@@ -86,11 +93,12 @@ export default function createStatusCommand() {
           }
           return;
         } catch {
-          const payload = { status: "unreachable" };
+          const payload = { status: "daemon_unreachable", code: 503 };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("daemon: unreachable");
+            console.log("status: daemon unreachable");
+            console.log("  Start the daemon with: crnd daemon start");
           }
           process.exitCode = 3;
           return;
@@ -99,11 +107,12 @@ export default function createStatusCommand() {
 
       const client = createRpcClient();
       if (!client) {
-        const payload = { status: "stopped" };
+        const payload = { status: "daemon_stopped", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("daemon: stopped");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
         return;
@@ -112,11 +121,11 @@ export default function createStatusCommand() {
       try {
         const res = await client.health.$get();
         if (!res.ok) {
-          const payload = { status: "unreachable", code: res.status };
+          const { payload, message } = await formatApiError(res, "status");
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log(`daemon: unreachable (${res.status})`);
+            console.log(message);
           }
           process.exitCode = 3;
           return;
@@ -132,11 +141,12 @@ export default function createStatusCommand() {
         console.log(`started: ${data.startedAt}`);
         console.log(`version: ${data.version}`);
       } catch {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("status: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
       }

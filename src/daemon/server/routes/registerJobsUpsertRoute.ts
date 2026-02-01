@@ -1,10 +1,10 @@
-import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import type openDatabase from "../../../db/openDatabase";
 import createJobInputSchema from "../../../shared/jobs/createJobInputSchema";
 import type createJobsFileSync from "../../jobs/createJobsFileSync";
 import upsertJob from "../../jobs/upsertJob";
 import type createScheduler from "../../scheduler/createScheduler";
+import createZValidator from "../createZValidator";
 
 type Db = ReturnType<typeof openDatabase>["orm"];
 type Scheduler = ReturnType<typeof createScheduler>;
@@ -16,7 +16,7 @@ export default function registerJobsUpsertRoute(
   jobsFileSync: JobsFileSync,
 ) {
   const schema = createJobInputSchema();
-  return new Hono().post("/jobs", zValidator("json", schema), (c) => {
+  return new Hono().post("/jobs", createZValidator("json", schema), (c) => {
     const input = c.req.valid("json");
     try {
       const result = upsertJob(db, input);

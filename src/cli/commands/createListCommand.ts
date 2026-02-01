@@ -1,5 +1,6 @@
 import { defineCommand } from "citty";
 import createRpcClient from "../../shared/rpc/createRpcClient";
+import formatApiError from "../errors/formatApiError";
 
 export default function createListCommand() {
   return defineCommand({
@@ -16,11 +17,12 @@ export default function createListCommand() {
     async run({ args }) {
       const client = createRpcClient();
       if (!client) {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("list: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
         return;
@@ -29,11 +31,11 @@ export default function createListCommand() {
       try {
         const res = await client.jobs.$get();
         if (!res.ok) {
-          const payload = { status: "error", code: res.status };
+          const { payload, message } = await formatApiError(res, "list");
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log(`jobs: error (${res.status})`);
+            console.log(message);
           }
           process.exitCode = 1;
           return;
@@ -54,11 +56,12 @@ export default function createListCommand() {
           console.log(`${job.name} (${job.id})`);
         }
       } catch {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("list: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
       }

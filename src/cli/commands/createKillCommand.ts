@@ -1,5 +1,6 @@
 import { defineCommand } from "citty";
 import createRpcClient from "../../shared/rpc/createRpcClient";
+import formatApiError from "../errors/formatApiError";
 
 export default function createKillCommand() {
   return defineCommand({
@@ -21,11 +22,12 @@ export default function createKillCommand() {
     async run({ args }) {
       const client = createRpcClient();
       if (!client) {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("kill: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
         return;
@@ -36,33 +38,43 @@ export default function createKillCommand() {
           param: { name: args.name },
         });
         if (res.status === 404) {
-          const payload = { status: "not_found" };
+          const payload = {
+            status: "not_found",
+            code: 404,
+            message: `Job "${args.name}" not found`,
+          };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("kill: job not found");
+            console.log(`kill: job "${args.name}" not found`);
+            console.log("  List available jobs with: crnd list");
           }
           process.exitCode = 1;
           return;
         }
 
         if (res.status === 409) {
-          const payload = { status: "not_running" };
+          const payload = {
+            status: "not_running",
+            code: 409,
+            message: `Job "${args.name}" is not currently running`,
+          };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("kill: no running job");
+            console.log(`kill: job "${args.name}" is not currently running`);
+            console.log(`  Check job status with: crnd status -n ${args.name}`);
           }
           process.exitCode = 1;
           return;
         }
 
         if (!res.ok) {
-          const payload = { status: "error", code: res.status };
+          const { payload, message } = await formatApiError(res, "kill");
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log(`kill: error (${res.status})`);
+            console.log(message);
           }
           process.exitCode = 1;
           return;
@@ -76,11 +88,12 @@ export default function createKillCommand() {
 
         console.log(`kill: requested (${data.runId})`);
       } catch {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("kill: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
       }

@@ -53,7 +53,10 @@ export default function createDoctorCommand() {
       }
 
       const autostartPath = getAutostartPath();
-      if (!autostartPath) {
+      if (process.env.CRND_AUTOSTART_DRY_RUN === "1") {
+        // In dry-run mode, report autostart as not installed since install was skipped
+        results.push({ check: "autostart", ok: false, detail: "dry_run" });
+      } else if (!autostartPath) {
         results.push({ check: "autostart", ok: false, detail: "unsupported" });
       } else if (process.platform === "win32") {
         const result = Bun.spawnSync([

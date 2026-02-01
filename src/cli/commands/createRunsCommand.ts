@@ -1,5 +1,6 @@
 import { defineCommand } from "citty";
 import createRpcClient from "../../shared/rpc/createRpcClient";
+import formatApiError from "../errors/formatApiError";
 
 export default function createRunsCommand() {
   return defineCommand({
@@ -25,11 +26,12 @@ export default function createRunsCommand() {
     async run({ args }) {
       const client = createRpcClient();
       if (!client) {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("runs: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
         return;
@@ -39,11 +41,25 @@ export default function createRunsCommand() {
       if (args.limit) {
         const parsed = Number(args.limit);
         if (!Number.isFinite(parsed) || parsed <= 0) {
-          const payload = { status: "invalid_limit" };
+          const payload = {
+            status: "validation_error",
+            code: 400,
+            message: "Invalid limit",
+            errors: [
+              {
+                field: "limit",
+                message: "Limit must be a positive number",
+                received: args.limit,
+              },
+            ],
+          };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("runs: invalid limit");
+            console.log("runs: validation failed");
+            console.log(
+              `  limit: Must be a positive number, received "${args.limit}"`,
+            );
           }
           process.exitCode = 2;
           return;
@@ -57,22 +73,27 @@ export default function createRunsCommand() {
           query: limit ? { limit: String(limit) } : {},
         });
         if (res.status === 404) {
-          const payload = { status: "not_found" };
+          const payload = {
+            status: "not_found",
+            code: 404,
+            message: `Job "${args.name}" not found`,
+          };
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log("runs: job not found");
+            console.log(`runs: job "${args.name}" not found`);
+            console.log("  List available jobs with: crnd list");
           }
           process.exitCode = 1;
           return;
         }
 
         if (!res.ok) {
-          const payload = { status: "error", code: res.status };
+          const { payload, message } = await formatApiError(res, "runs");
           if (!process.stdout.isTTY || args.json) {
             console.log(JSON.stringify(payload));
           } else {
-            console.log(`runs: error (${res.status})`);
+            console.log(message);
           }
           process.exitCode = 1;
           return;
@@ -93,11 +114,12 @@ export default function createRunsCommand() {
           console.log(`${run.id} ${run.status} ${run.startedAt ?? ""}`.trim());
         }
       } catch {
-        const payload = { status: "unreachable" };
+        const payload = { status: "daemon_unreachable", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("daemon: unreachable");
+          console.log("runs: daemon unreachable");
+          console.log("  Start the daemon with: crnd daemon start");
         }
         process.exitCode = 3;
       }
