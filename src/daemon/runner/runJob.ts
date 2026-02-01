@@ -6,6 +6,7 @@ import appendEvent from "../../shared/events/appendEvent";
 import type formatJobRow from "../../shared/jobs/formatJobRow";
 import getRunOutputPaths from "../../shared/paths/getRunOutputPaths";
 import createRunOutputFds from "./createRunOutputFds";
+import escapeShellArg from "./escapeShellArg";
 import getRunStatus from "./getRunStatus";
 
 type Db = ReturnType<typeof openDatabase>["orm"];
@@ -37,8 +38,18 @@ export default function runJob(db: Db, job: Job) {
 
   const env = job.env ? { ...process.env, ...job.env } : process.env;
 
+  // On macOS/Linux, spawn via login shell to source shell configs (.bash_profile, .zshrc, etc.)
+  // This ensures executables in user-modified PATH are available
+  // Uses $SHELL to respect user's preferred shell (bash, zsh, etc.)
+  // On Windows, spawn directly since PATH is usually available globally
+  const shell = process.env.SHELL || "/bin/bash";
+  const spawnCommand =
+    process.platform === "win32"
+      ? job.command
+      : [shell, "-lc", job.command.map(escapeShellArg).join(" ")];
+
   try {
-    const proc = Bun.spawn(job.command, {
+    const proc = Bun.spawn(spawnCommand, {
       cwd: job.cwd ?? undefined,
       env,
       stdout: outputs.stdoutFd,

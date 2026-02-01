@@ -41,8 +41,9 @@ crnd is a zero-config, local-only scheduler and process manager with a verb-firs
 - Storage: SQLite for state/history, TOML for editable job definitions.
 
 ### Execution Model
-- Each job runs as a separate OS process using `Bun.spawn([...argv])`.
-- No shell execution; argv array only.
+- Each job runs as a separate OS process using `Bun.spawn`.
+- On macOS/Linux: commands are spawned via `$SHELL -lc` (user's login shell) to source shell configs (`.bash_profile`, `.zshrc`, etc.), ensuring user-modified PATH is available.
+- On Windows: commands are spawned directly as argv array.
 - Per-user daemon, auto-started at login (best effort), on-demand fallback.
 
 ## 6. Lifecycle and Autostart
@@ -124,7 +125,9 @@ paused = false
 - Clock changes: next run time is recomputed each tick via Croner.
 
 ## 10. Process Execution
-- Spawn via `Bun.spawn([cmd, ...args])` with `stdout` and `stderr` set to file sinks.
+- On macOS/Linux: spawn via `Bun.spawn([$SHELL, "-lc", cmd])` using user's login shell to source shell configs and ensure user-modified PATH is available.
+- On Windows: spawn via `Bun.spawn([cmd, ...args])` directly.
+- `stdout` and `stderr` are set to file sinks.
 - All runs are isolated OS processes; no in-process task execution.
 - Timeout uses Bun spawn `timeout` option with `killSignal`.
 - Stop/kill:
