@@ -80,7 +80,7 @@ jobs:
           done
 
       - name: Publish main package
-        run: npm publish dist --access public
+        run: npm publish ./dist --access public
 
       - name: Create GitHub Release
         env:
