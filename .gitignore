@@ -4,3 +4,10 @@ dist/
 *.db-shm
 *.db-wal
 .DS_Store
+
+# Built binaries (added at publish time)
+packages/@crnd/*/crnd
+packages/@crnd/*/crnd.exe
+crnd-darwin-*
+crnd-linux-*
+crnd-windows-*

@@ -1,0 +1,88 @@
+#!/usr/bin/env node
+const { platform, arch, env } = process;
+const { execSync, spawnSync } = require("child_process");
+
+function isMusl() {
+  if (platform !== "linux") {
+    return false;
+  }
+  try {
+    const output = execSync("ldd --version 2>&1", {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return output.toLowerCase().includes("musl");
+  } catch (err) {
+    // If ldd fails, check if we're on Alpine by looking at /etc/os-release
+    try {
+      const osRelease = require("fs").readFileSync("/etc/os-release", "utf8");
+      return osRelease.toLowerCase().includes("alpine");
+    } catch {
+      return false;
+    }
+  }
+}
+
+const PLATFORMS = {
+  win32: {
+    x64: "@crnd/cli-win32-x64/crnd.exe",
+  },
+  darwin: {
+    x64: "@crnd/cli-darwin-x64/crnd",
+    arm64: "@crnd/cli-darwin-arm64/crnd",
+  },
+  linux: {
+    x64: "@crnd/cli-linux-x64/crnd",
+    arm64: "@crnd/cli-linux-arm64/crnd",
+  },
+  "linux-musl": {
+    x64: "@crnd/cli-linux-x64-musl/crnd",
+    arm64: "@crnd/cli-linux-arm64-musl/crnd",
+  },
+};
+
+function getBinaryPath() {
+  // Allow override via environment variable
+  if (env.CRND_BINARY_PATH) {
+    return env.CRND_BINARY_PATH;
+  }
+
+  const platformKey = platform === "linux" && isMusl() ? "linux-musl" : platform;
+  const binPath = PLATFORMS[platformKey]?.[arch];
+
+  if (!binPath) {
+    console.error(
+      `crnd does not support your platform yet: ${platform} ${arch}\n` +
+        `If you think this is a bug, please open an issue at:\n` +
+        `https://github.com/ysm-dev/crnd/issues`
+    );
+    process.exit(1);
+  }
+
+  try {
+    return require.resolve(binPath);
+  } catch {
+    console.error(
+      `Could not find the crnd binary for your platform: ${platform} ${arch}\n\n` +
+        `This usually means the optional dependency was not installed.\n` +
+        `Try reinstalling with: npm install crnd\n\n` +
+        `If the problem persists, please open an issue at:\n` +
+        `https://github.com/ysm-dev/crnd/issues`
+    );
+    process.exit(1);
+  }
+}
+
+const binaryPath = getBinaryPath();
+
+const result = spawnSync(binaryPath, process.argv.slice(2), {
+  stdio: "inherit",
+  shell: false,
+});
+
+if (result.error) {
+  console.error(`Failed to execute crnd: ${result.error.message}`);
+  process.exit(1);
+}
+
+process.exit(result.status ?? 0);

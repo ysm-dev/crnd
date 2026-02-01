@@ -24,6 +24,34 @@
         "drizzle-kit": "^0.31.8",
       },
     },
+    "packages/@crnd/cli-darwin-arm64": {
+      "name": "@crnd/cli-darwin-arm64",
+      "version": "0.0.0",
+    },
+    "packages/@crnd/cli-darwin-x64": {
+      "name": "@crnd/cli-darwin-x64",
+      "version": "0.0.0",
+    },
+    "packages/@crnd/cli-linux-arm64": {
+      "name": "@crnd/cli-linux-arm64",
+      "version": "0.0.0",
+    },
+    "packages/@crnd/cli-linux-arm64-musl": {
+      "name": "@crnd/cli-linux-arm64-musl",
+      "version": "0.0.0",
+    },
+    "packages/@crnd/cli-linux-x64": {
+      "name": "@crnd/cli-linux-x64",
+      "version": "0.0.0",
+    },
+    "packages/@crnd/cli-linux-x64-musl": {
+      "name": "@crnd/cli-linux-x64-musl",
+      "version": "0.0.0",
+    },
+    "packages/@crnd/cli-win32-x64": {
+      "name": "@crnd/cli-win32-x64",
+      "version": "0.0.0",
+    },
   },
   "packages": {
     "@biomejs/biome": ["@biomejs/biome@2.3.13", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.3.13", "@biomejs/cli-darwin-x64": "2.3.13", "@biomejs/cli-linux-arm64": "2.3.13", "@biomejs/cli-linux-arm64-musl": "2.3.13", "@biomejs/cli-linux-x64": "2.3.13", "@biomejs/cli-linux-x64-musl": "2.3.13", "@biomejs/cli-win32-arm64": "2.3.13", "@biomejs/cli-win32-x64": "2.3.13" }, "bin": { "biome": "bin/biome" } }, "sha512-Fw7UsV0UAtWIBIm0M7g5CRerpu1eKyKAXIazzxhbXYUyMkwNrkX/KLkGI7b+uVDQ5cLUMfOC9vR60q9IDYDstA=="],
@@ -43,6 +71,20 @@
     "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.3.13", "", { "os": "win32", "cpu": "arm64" }, "sha512-QweDxY89fq0VvrxME+wS/BXKmqMrOTZlN9SqQ79kQSIc3FrEwvW/PvUegQF6XIVaekncDykB5dzPqjbwSKs9DA=="],
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.3.13", "", { "os": "win32", "cpu": "x64" }, "sha512-trDw2ogdM2lyav9WFQsdsfdVy1dvZALymRpgmWsvSez0BJzBjulhOT/t+wyKeh3pZWvwP3VMs1SoOKwO3wecMQ=="],
+
+    "@crnd/cli-darwin-arm64": ["@crnd/cli-darwin-arm64@workspace:packages/@crnd/cli-darwin-arm64"],
+
+    "@crnd/cli-darwin-x64": ["@crnd/cli-darwin-x64@workspace:packages/@crnd/cli-darwin-x64"],
+
+    "@crnd/cli-linux-arm64": ["@crnd/cli-linux-arm64@workspace:packages/@crnd/cli-linux-arm64"],
+
+    "@crnd/cli-linux-arm64-musl": ["@crnd/cli-linux-arm64-musl@workspace:packages/@crnd/cli-linux-arm64-musl"],
+
+    "@crnd/cli-linux-x64": ["@crnd/cli-linux-x64@workspace:packages/@crnd/cli-linux-x64"],
+
+    "@crnd/cli-linux-x64-musl": ["@crnd/cli-linux-x64-musl@workspace:packages/@crnd/cli-linux-x64-musl"],
+
+    "@crnd/cli-win32-x64": ["@crnd/cli-win32-x64@workspace:packages/@crnd/cli-win32-x64"],
 
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
 

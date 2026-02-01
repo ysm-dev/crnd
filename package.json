@@ -1,18 +1,16 @@
 {
   "name": "crnd",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "private": true,
   "description": "Agent-first CLI for cron scheduling and process management",
   "type": "module",
-  "bin": {
-    "crnd": "src/cli/main.ts"
-  },
-  "files": [
-    "src",
-    "drizzle"
+  "workspaces": [
+    "packages/@crnd/*"
   ],
   "scripts": {
     "dev": "bun run src/cli/main.ts",
     "build": "bun build ./src/cli/main.ts --compile --outfile dist/crnd",
+    "generate-packages": "bun run scripts/generate-packages.ts",
     "lint": "biome lint .",
     "format": "biome format . --write",
     "check": "biome check .",

@@ -19,24 +19,68 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build binaries
+      - name: Build binaries for all platforms
         run: |
-          mkdir -p dist
+          # Darwin
+          bun build ./src/cli/main.ts --compile --target=bun-darwin-arm64 --outfile crnd-darwin-arm64
+          bun build ./src/cli/main.ts --compile --target=bun-darwin-x64 --outfile crnd-darwin-x64
 
-          # Build for each target
-          bun build ./src/cli/main.ts --compile --target=bun-darwin-arm64 --outfile dist/crnd-darwin-arm64
-          bun build ./src/cli/main.ts --compile --target=bun-darwin-x64 --outfile dist/crnd-darwin-x64
-          bun build ./src/cli/main.ts --compile --target=bun-linux-arm64 --outfile dist/crnd-linux-arm64
-          bun build ./src/cli/main.ts --compile --target=bun-linux-x64 --outfile dist/crnd-linux-x64
+          # Linux (glibc)
+          bun build ./src/cli/main.ts --compile --target=bun-linux-arm64 --outfile crnd-linux-arm64
+          bun build ./src/cli/main.ts --compile --target=bun-linux-x64 --outfile crnd-linux-x64
 
-      - name: Create tarballs
+          # Linux (musl)
+          bun build ./src/cli/main.ts --compile --target=bun-linux-arm64-musl --outfile crnd-linux-arm64-musl
+          bun build ./src/cli/main.ts --compile --target=bun-linux-x64-musl --outfile crnd-linux-x64-musl
+
+          # Windows
+          bun build ./src/cli/main.ts --compile --target=bun-windows-x64 --outfile crnd-windows-x64.exe
+
+      - name: Generate packages
+        run: bun run generate-packages
+
+      - name: Create tarballs for GitHub Release
         run: |
-          cd dist
-          for bin in crnd-darwin-arm64 crnd-darwin-x64 crnd-linux-arm64 crnd-linux-x64; do
-            mv "$bin" crnd
-            tar -czvf "${bin}.tar.gz" crnd
+          mkdir -p release
+
+          # Darwin
+          for arch in arm64 x64; do
+            cp "crnd-darwin-${arch}" crnd
+            tar -czvf "release/crnd-darwin-${arch}.tar.gz" crnd
             rm crnd
           done
+
+          # Linux (glibc)
+          for arch in arm64 x64; do
+            cp "crnd-linux-${arch}" crnd
+            tar -czvf "release/crnd-linux-${arch}.tar.gz" crnd
+            rm crnd
+          done
+
+          # Linux (musl)
+          for arch in arm64 x64; do
+            cp "crnd-linux-${arch}-musl" crnd
+            tar -czvf "release/crnd-linux-${arch}-musl.tar.gz" crnd
+            rm crnd
+          done
+
+          # Windows
+          cp crnd-windows-x64.exe crnd.exe
+          zip -r "release/crnd-windows-x64.zip" crnd.exe
+          rm crnd.exe
+
+      - name: Setup npm authentication
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish platform packages
+        run: |
+          for pkg in packages/@crnd/cli-*; do
+            echo "Publishing $pkg..."
+            npm publish "$pkg" --access public
+          done
+
+      - name: Publish main package
+        run: npm publish dist --access public
 
       - name: Create GitHub Release
         env:
@@ -45,14 +89,7 @@ jobs:
           gh release create ${{ github.ref_name }} \
             --title "${{ github.ref_name }}" \
             --generate-notes \
-            dist/*.tar.gz
-
-      - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-          npm publish --access public
+            release/*
 
       - name: Update Homebrew formula
         env:
@@ -60,17 +97,14 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
 
-          # Calculate SHA256 for each tarball
-          SHA_DARWIN_ARM64=$(sha256sum dist/crnd-darwin-arm64.tar.gz | cut -d ' ' -f1)
-          SHA_DARWIN_X64=$(sha256sum dist/crnd-darwin-x64.tar.gz | cut -d ' ' -f1)
-          SHA_LINUX_ARM64=$(sha256sum dist/crnd-linux-arm64.tar.gz | cut -d ' ' -f1)
-          SHA_LINUX_X64=$(sha256sum dist/crnd-linux-x64.tar.gz | cut -d ' ' -f1)
+          SHA_DARWIN_ARM64=$(sha256sum release/crnd-darwin-arm64.tar.gz | cut -d ' ' -f1)
+          SHA_DARWIN_X64=$(sha256sum release/crnd-darwin-x64.tar.gz | cut -d ' ' -f1)
+          SHA_LINUX_ARM64=$(sha256sum release/crnd-linux-arm64.tar.gz | cut -d ' ' -f1)
+          SHA_LINUX_X64=$(sha256sum release/crnd-linux-x64.tar.gz | cut -d ' ' -f1)
 
-          # Clone homebrew tap
           git clone https://x-access-token:${GH_TOKEN}@github.com/ysm-dev/homebrew-crnd.git /tmp/homebrew-crnd
           cd /tmp/homebrew-crnd
 
-          # Update formula
           cat > Formula/crnd.rb << EOF
           class Crnd < Formula
             desc "Agent-first CLI for cron scheduling and process management"
@@ -108,7 +142,6 @@ jobs:
           end
           EOF
 
-          # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/crnd.rb
