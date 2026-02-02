@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import isOverlapPolicy from "../../shared/jobs/isOverlapPolicy";
 import createRpcClient from "../../shared/rpc/createRpcClient";
 import formatApiError from "../errors/formatApiError";
+import parseRelativeTime from "../utils/parseRelativeTime";
 import getCommandArgs from "./getCommandArgs";
 import parseEnvArgs from "./parseEnvArgs";
 
@@ -28,6 +29,10 @@ export default function createScheduleCommand() {
       at: {
         type: "string",
         alias: "a",
+      },
+      in: {
+        type: "string",
+        alias: "i",
       },
       timezone: {
         type: "string",
@@ -156,10 +161,16 @@ export default function createScheduleCommand() {
 
       const hasSchedule = Boolean(args.schedule);
       const hasRunAt = Boolean(args.at);
-      if (hasSchedule === hasRunAt) {
-        const message = hasSchedule
-          ? "Provide either -s (schedule) or -a (at), not both"
-          : "Missing schedule. Use -s for cron or -a for one-time run";
+      const hasRelative = Boolean(args.in);
+      const scheduleCount = [hasSchedule, hasRunAt, hasRelative].filter(
+        Boolean,
+      ).length;
+
+      if (scheduleCount !== 1) {
+        const message =
+          scheduleCount === 0
+            ? "Missing schedule. Use -s for cron, -a for one-time, or -i for relative time"
+            : "Provide only one of -s (schedule), -a (at), or -i (in)";
         const payload = {
           status: "validation_error",
           code: 400,
@@ -172,11 +183,44 @@ export default function createScheduleCommand() {
           console.log("schedule: validation failed");
           console.log(`  schedule: ${message}`);
           console.log("  Examples:");
-          console.log("    Cron:    -s '0 2 * * *' (daily at 2am)");
+          console.log("    Cron:     -s '0 2 * * *' (daily at 2am)");
           console.log("    One-time: -a '2026-02-01T10:00:00Z'");
+          console.log("    Relative: -i '5m' (in 5 minutes)");
         }
         process.exitCode = 2;
         return;
+      }
+
+      // Parse relative time to absolute timestamp
+      let runAt = args.at;
+      if (hasRelative) {
+        try {
+          runAt = parseRelativeTime(args.in as string);
+        } catch (e) {
+          const errorMessage =
+            e instanceof Error ? e.message : "Invalid relative time format";
+          const payload = {
+            status: "validation_error",
+            code: 400,
+            message: "Invalid relative time",
+            errors: [
+              {
+                field: "in",
+                message: errorMessage,
+                received: args.in,
+              },
+            ],
+          };
+          if (!process.stdout.isTTY || args.json) {
+            console.log(JSON.stringify(payload));
+          } else {
+            console.log("schedule: validation failed");
+            console.log(`  in: ${errorMessage}`);
+            console.log('  Examples: -i 5m, -i 2h, -i 30s, -i "1 hour"');
+          }
+          process.exitCode = 2;
+          return;
+        }
       }
 
       if (args.overlap && !isOverlapPolicy(args.overlap)) {
@@ -214,7 +258,7 @@ export default function createScheduleCommand() {
         description: args.description,
         command,
         schedule: args.schedule,
-        runAt: args.at,
+        runAt,
         timezone: args.timezone,
         timeoutMs,
         paused: args.paused,

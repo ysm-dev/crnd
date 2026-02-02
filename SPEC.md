@@ -210,8 +210,13 @@ paused = false
 # Schedule a cron job
 crnd schedule -n backup -s "0 2 * * *" -z "America/Los_Angeles" -- /usr/bin/rsync -a /src /dst
 
-# Schedule one-time job
+# Schedule one-time job (absolute time)
 crnd schedule -n once -a "2026-02-01T10:00:00Z" -- /usr/bin/echo hello
+
+# Schedule one-time job (relative time)
+crnd schedule -n reminder -i 5m -- /usr/bin/echo "Time's up!"
+crnd schedule -n deploy -i 2h -- ./deploy.sh
+crnd schedule -n quick -i 30s -- ./script.sh
 
 # Pause and resume
 crnd pause -n backup
@@ -223,6 +228,17 @@ crnd run-once -n backup
 # Read logs for latest run
 crnd logs -n backup -t
 ```
+
+### Relative time formats
+The `-i` flag accepts relative time strings parsed by the `ms` library:
+- `30s`, `30 seconds` -> 30 seconds from now
+- `5m`, `5 minutes` -> 5 minutes from now
+- `2h`, `2 hours` -> 2 hours from now
+- `1d`, `1 day` -> 1 day from now
+- `1w`, `1 week` -> 1 week from now
+- `1y`, `1 year` -> 1 year from now
+
+Relative times are converted to absolute ISO 8601 timestamps at CLI parse time before being sent to the daemon.
 
 ### Exit codes
 - `0`: success

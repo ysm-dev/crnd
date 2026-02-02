@@ -21,6 +21,9 @@ crnd daemon start
 # schedule a backup at 2am UTC daily
 crnd schedule -n backup -s "0 2 * * *" -- rsync -a ~/docs ~/backup
 
+# schedule a one-time job in 5 minutes
+crnd schedule -n reminder -i 5m -- say "Time to stretch!"
+
 # run it now
 crnd run-once -n backup
 
@@ -46,7 +49,8 @@ Everything runs locally. No cloud, no Docker, no account, no network calls.
 
 ```sh
 crnd schedule -n NAME -s "CRON" -- command args   # create/update job
-crnd schedule -n NAME -a "ISO_TIMESTAMP" -- cmd   # one-time job
+crnd schedule -n NAME -a "ISO_TIMESTAMP" -- cmd   # one-time job (absolute)
+crnd schedule -n NAME -i "5m" -- cmd              # one-time job (relative)
 crnd list                                         # all jobs
 crnd status -n NAME                               # job details
 crnd runs -n NAME                                 # run history
