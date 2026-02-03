@@ -9,7 +9,46 @@ function createMockResponse(status: number, body: unknown) {
 }
 
 describe("formatApiError", () => {
-  test("handles Zod validation errors", async () => {
+  test("handles new standardized API error format", async () => {
+    const res = createMockResponse(400, {
+      error: {
+        code: "validation_error",
+        message: 'Invalid datetime at "runAt"',
+        hint: "Use ISO 8601 format: 2026-02-01T10:00:00Z",
+        details: [
+          {
+            path: "runAt",
+            message:
+              "Invalid datetime. Use ISO 8601 with timezone (e.g., 2026-02-01T10:00:00Z)",
+            received: "2026-02-01T22:38:23",
+          },
+        ],
+      },
+    });
+
+    const result = await formatApiError(res, "schedule");
+
+    expect(result.payload).toEqual({
+      code: "validation_error",
+      statusCode: 400,
+      message: 'Invalid datetime at "runAt"',
+      hint: "Use ISO 8601 format: 2026-02-01T10:00:00Z",
+      details: [
+        {
+          path: "runAt",
+          message:
+            "Invalid datetime. Use ISO 8601 with timezone (e.g., 2026-02-01T10:00:00Z)",
+          received: "2026-02-01T22:38:23",
+        },
+      ],
+    });
+    expect(result.message).toContain('schedule: Invalid datetime at "runAt"');
+    expect(result.message).toContain(
+      "Use ISO 8601 format: 2026-02-01T10:00:00Z",
+    );
+  });
+
+  test("handles legacy Zod validation errors", async () => {
     const res = createMockResponse(400, {
       success: false,
       error: {
@@ -26,21 +65,19 @@ describe("formatApiError", () => {
 
     const result = await formatApiError(res, "schedule");
 
-    expect(result.payload).toEqual({
-      status: "validation_error",
-      code: 400,
-      message: "Validation failed",
-      errors: [
-        {
-          field: "runAt",
-          message:
-            "Invalid datetime. Use ISO 8601 with timezone (e.g., 2026-02-01T10:00:00Z)",
-          received: "2026-02-01T22:38:23",
-        },
-      ],
+    expect(result.payload.code).toBe("validation_error");
+    expect(result.payload.statusCode).toBe(400);
+    expect(result.payload.message).toBe("Validation failed");
+    expect(result.payload.details).toHaveLength(1);
+    expect(result.payload.details?.[0]).toEqual({
+      path: "runAt",
+      message:
+        "Invalid datetime. Use ISO 8601 with timezone (e.g., 2026-02-01T10:00:00Z)",
+      received: "2026-02-01T22:38:23",
     });
-    expect(result.message).toBe(
-      'schedule: validation failed\n  runAt: Invalid datetime. Use ISO 8601 with timezone (e.g., 2026-02-01T10:00:00Z) (received: "2026-02-01T22:38:23")',
+    expect(result.message).toContain("schedule: Validation failed");
+    expect(result.message).toContain(
+      'runAt: Invalid datetime. Use ISO 8601 with timezone (e.g., 2026-02-01T10:00:00Z) (received: "2026-02-01T22:38:23")',
     );
   });
 
@@ -64,18 +101,18 @@ describe("formatApiError", () => {
 
     const result = await formatApiError(res, "schedule");
 
-    expect(result.payload.errors).toHaveLength(2);
-    expect(result.payload.errors?.[0]).toEqual({
-      field: "name",
+    expect(result.payload.details).toHaveLength(2);
+    expect(result.payload.details?.[0]).toEqual({
+      path: "name",
       message: "Required",
       received: undefined,
     });
-    expect(result.payload.errors?.[1]).toEqual({
-      field: "schedule",
+    expect(result.payload.details?.[1]).toEqual({
+      path: "schedule",
       message: "Invalid cron expression",
       received: "bad",
     });
-    expect(result.message).toContain("schedule: validation failed");
+    expect(result.message).toContain("schedule: Validation failed");
     expect(result.message).toContain("name: Required");
     expect(result.message).toContain(
       'schedule: Invalid cron expression (received: "bad")',
@@ -98,7 +135,7 @@ describe("formatApiError", () => {
 
     const result = await formatApiError(res, "schedule");
 
-    expect(result.payload.errors?.[0].field).toBe("command.0");
+    expect(result.payload.details?.[0].path).toBe("command.0");
     expect(result.message).toContain(
       "command.0: String expected (received: 123)",
     );
@@ -119,10 +156,10 @@ describe("formatApiError", () => {
 
     const result = await formatApiError(res, "schedule");
 
-    expect(result.payload.errors?.[0].field).toBe("(root)");
+    expect(result.payload.details?.[0].path).toBe("(root)");
   });
 
-  test("handles simple error responses", async () => {
+  test("handles legacy simple error responses", async () => {
     const res = createMockResponse(404, {
       error: "not_found",
       message: "Job not found",
@@ -131,26 +168,46 @@ describe("formatApiError", () => {
     const result = await formatApiError(res, "show");
 
     expect(result.payload).toEqual({
-      status: "not_found",
-      code: 404,
+      code: "not_found",
+      statusCode: 404,
       message: "Job not found",
+      hint: undefined,
     });
     expect(result.message).toBe("show: Job not found");
   });
 
-  test("handles simple error without message", async () => {
+  test("handles legacy simple error without message", async () => {
     const res = createMockResponse(409, {
       error: "already_running",
     });
 
     const result = await formatApiError(res, "run-once");
 
-    expect(result.payload).toEqual({
-      status: "already_running",
-      code: 409,
-      message: "already_running",
+    expect(result.payload.code).toBe("already_running");
+    expect(result.payload.statusCode).toBe(409);
+    expect(result.payload.message).toBe("already running");
+    expect(result.message).toBe("run-once: already running");
+  });
+
+  test("handles new standardized not found error", async () => {
+    const res = createMockResponse(404, {
+      error: {
+        code: "job_not_found",
+        message: 'Job "backup" was not found',
+        hint: "List available jobs with: crnd list",
+      },
     });
-    expect(result.message).toBe("run-once: already_running");
+
+    const result = await formatApiError(res, "show");
+
+    expect(result.payload).toEqual({
+      code: "job_not_found",
+      statusCode: 404,
+      message: 'Job "backup" was not found',
+      hint: "List available jobs with: crnd list",
+    });
+    expect(result.message).toContain('show: Job "backup" was not found');
+    expect(result.message).toContain("List available jobs with: crnd list");
   });
 
   test("handles failed JSON parsing", async () => {
@@ -163,11 +220,9 @@ describe("formatApiError", () => {
 
     const result = await formatApiError(res, "list");
 
-    expect(result.payload).toEqual({
-      status: "error",
-      code: 500,
-    });
-    expect(result.message).toBe("list: error (500)");
+    expect(result.payload.code).toBe("error");
+    expect(result.payload.statusCode).toBe(500);
+    expect(result.message).toContain("list: Request failed with status 500");
   });
 
   test("handles unknown error format", async () => {
@@ -177,11 +232,9 @@ describe("formatApiError", () => {
 
     const result = await formatApiError(res, "status");
 
-    expect(result.payload).toEqual({
-      status: "error",
-      code: 500,
-    });
-    expect(result.message).toBe("status: error (500)");
+    expect(result.payload.code).toBe("error");
+    expect(result.payload.statusCode).toBe(500);
+    expect(result.message).toContain("status: Request failed with status 500");
   });
 
   test("handles null body", async () => {
@@ -189,11 +242,9 @@ describe("formatApiError", () => {
 
     const result = await formatApiError(res, "export");
 
-    expect(result.payload).toEqual({
-      status: "error",
-      code: 502,
-    });
-    expect(result.message).toBe("export: error (502)");
+    expect(result.payload.code).toBe("error");
+    expect(result.payload.statusCode).toBe(502);
+    expect(result.message).toContain("export: Request failed with status 502");
   });
 
   test("preserves received values of different types", async () => {

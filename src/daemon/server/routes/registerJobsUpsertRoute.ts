@@ -5,6 +5,7 @@ import type createJobsFileSync from "../../jobs/createJobsFileSync";
 import upsertJob from "../../jobs/upsertJob";
 import type createScheduler from "../../scheduler/createScheduler";
 import createZValidator from "../createZValidator";
+import { jobNotSavedResponse } from "./createErrorResponse";
 
 type Db = ReturnType<typeof openDatabase>["orm"];
 type Scheduler = ReturnType<typeof createScheduler>;
@@ -24,7 +25,7 @@ export default function registerJobsUpsertRoute(
       jobsFileSync.writeFromDb();
       return c.json(result.job);
     } catch {
-      return c.json({ error: "job_not_saved" }, 500);
+      return c.json(jobNotSavedResponse(input.name), 500);
     }
   });
 }

@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from "hono";
+import { unauthorizedResponse } from "./routes/createErrorResponse";
 
 export default function createAuthMiddleware(token: string): MiddlewareHandler {
   return async (c, next) => {
@@ -8,7 +9,7 @@ export default function createAuthMiddleware(token: string): MiddlewareHandler {
       : null;
 
     if (!value || value !== token) {
-      return c.json({ error: "unauthorized" }, 401);
+      return c.json(unauthorizedResponse(), 401);
     }
 
     await next();

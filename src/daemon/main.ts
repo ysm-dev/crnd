@@ -37,6 +37,7 @@ export default function startDaemon() {
     scheduler,
     jobsFileSync,
     () => shutdown(),
+    logger,
   );
   const server = startServer(app);
   const port = server.port;

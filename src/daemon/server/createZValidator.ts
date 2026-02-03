@@ -1,6 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
 import type { Context } from "hono";
 import type { z } from "zod";
+import { fromZodError } from "zod-validation-error";
+import type { ApiErrorResponse, ValidationIssue } from "../../shared/errors";
+import { ErrorCode } from "../../shared/errors";
 
 type ValidationTarget =
   | "json"
@@ -10,61 +13,85 @@ type ValidationTarget =
   | "header"
   | "cookie";
 
-type ZodIssueWithInput = {
-  path: (string | number)[];
-  message: string;
-  code: string;
-  received?: unknown;
-};
+/**
+ * Normalizes a path array to only contain strings and numbers.
+ */
+function normalizePath(path: PropertyKey[]): (string | number)[] {
+  return path.filter(
+    (key): key is string | number =>
+      typeof key === "string" || typeof key === "number",
+  );
+}
 
-type FormattedError = {
-  success: false;
-  error: {
-    issues: ZodIssueWithInput[];
-  };
-};
-
-function formatZodError(issues: z.ZodIssue[], input: unknown): FormattedError {
-  const formattedIssues = issues.map((issue) => {
-    // Extract the received value from the input based on the path
-    let received: unknown = input;
-    for (const key of issue.path) {
-      if (
-        received &&
-        typeof received === "object" &&
-        (typeof key === "string" || typeof key === "number")
-      ) {
-        received = (received as Record<string | number, unknown>)[key];
-      } else {
-        received = undefined;
-        break;
-      }
+/**
+ * Extracts the received value from input data based on a path array.
+ */
+function extractReceived(
+  input: unknown,
+  path: PropertyKey[],
+): unknown | undefined {
+  let current: unknown = input;
+  for (const key of path) {
+    if (
+      current &&
+      typeof current === "object" &&
+      (typeof key === "string" || typeof key === "number")
+    ) {
+      current = (current as Record<string | number, unknown>)[key];
+    } else {
+      return undefined;
     }
+  }
+  return current;
+}
 
-    // Convert path to string/number only (filter out symbols)
-    const normalizedPath = issue.path.filter(
-      (k): k is string | number =>
-        typeof k === "string" || typeof k === "number",
-    );
+/**
+ * Formats Zod validation errors into the standardized API error response format.
+ * Uses `zod-validation-error` for user-friendly message formatting.
+ */
+function formatValidationError(
+  zodError: z.ZodError,
+  input: unknown,
+): ApiErrorResponse {
+  // Use zod-validation-error for user-friendly message formatting
+  const formatted = fromZodError(zodError, {
+    prefix: null,
+    includePath: true,
+  });
 
+  // Convert Zod issues to our ValidationIssue format
+  const details: ValidationIssue[] = zodError.issues.map((issue) => {
+    const normalizedPath = normalizePath(issue.path);
     return {
-      path: normalizedPath,
+      path: normalizedPath.length > 0 ? normalizedPath.join(".") : "(root)",
       message: issue.message,
-      code: issue.code,
-      received,
+      received: extractReceived(input, issue.path),
     };
   });
 
   return {
-    success: false,
-    error: { issues: formattedIssues },
+    error: {
+      code: ErrorCode.VALIDATION_ERROR,
+      message: formatted.message,
+      hint: "Check the field values and try again",
+      details,
+    },
   };
 }
 
 /**
- * Creates a zValidator with a custom hook that includes the received
- * value in each validation error issue. This makes error messages more
- * informative for debugging.
+ * Creates a zValidator with a custom hook that returns standardized error responses.
+ *
+ * Features:
+ * - Uses `zod-validation-error` for user-friendly error messages
+ * - Includes the received value in each validation error for debugging
+ * - Returns consistent error format matching ApiErrorResponse type
+ *
+ * @example
+ * app.post('/jobs', createZValidator('json', jobSchema), (c) => {
+ *   const data = c.req.valid('json');
+ *   // data is validated and typed
+ * });
  */
 export default function createZValidator<
   Target extends ValidationTarget,
@@ -72,8 +99,10 @@ export default function createZValidator<
 >(target: Target, schema: Schema) {
   return zValidator(target, schema, (result, c: Context) => {
     if (!result.success) {
-      const formatted = formatZodError(result.error.issues, result.data);
-      return c.json(formatted, 400);
+      // Cast to z.ZodError to ensure compatibility with zod-validation-error
+      const zodError = result.error as unknown as z.ZodError;
+      const errorResponse = formatValidationError(zodError, result.data);
+      return c.json(errorResponse, 400);
     }
   });
 }

@@ -1,20 +1,44 @@
-import type { ApiErrorField, ApiErrorPayload } from "./ApiErrorPayload";
+import { type ErrorCode, isApiErrorResponse } from "../../shared/errors";
 
-type ZodIssue = {
-  path: (string | number)[];
+/**
+ * Parsed error payload for CLI output and JSON responses.
+ */
+export type ParsedApiError = {
+  /** Machine-readable error code */
+  code: ErrorCode | string;
+  /** HTTP status code */
+  statusCode: number;
+  /** Human-readable error message */
   message: string;
-  code?: string;
-  received?: unknown;
+  /** Actionable suggestion for how to fix the error */
+  hint?: string;
+  /** Array of validation issues (for multi-field errors) */
+  details?: Array<{
+    path: string;
+    message: string;
+    received?: unknown;
+  }>;
 };
 
-type ZodErrorResponse = {
+/**
+ * Legacy Zod error response format (for backward compatibility).
+ */
+type LegacyZodErrorResponse = {
   success: false;
   error: {
-    issues: ZodIssue[];
+    issues: Array<{
+      path: (string | number)[];
+      message: string;
+      code?: string;
+      received?: unknown;
+    }>;
   };
 };
 
-type SimpleErrorResponse = {
+/**
+ * Legacy simple error response format (for backward compatibility).
+ */
+type LegacySimpleErrorResponse = {
   error: string;
   message?: string;
 };
@@ -28,7 +52,9 @@ type ResponseLike = {
   json: () => Promise<unknown>;
 };
 
-function isZodErrorResponse(body: unknown): body is ZodErrorResponse {
+function isLegacyZodErrorResponse(
+  body: unknown,
+): body is LegacyZodErrorResponse {
   if (typeof body !== "object" || body === null) {
     return false;
   }
@@ -41,7 +67,9 @@ function isZodErrorResponse(body: unknown): body is ZodErrorResponse {
   );
 }
 
-function isSimpleErrorResponse(body: unknown): body is SimpleErrorResponse {
+function isLegacySimpleErrorResponse(
+  body: unknown,
+): body is LegacySimpleErrorResponse {
   if (typeof body !== "object" || body === null) {
     return false;
   }
@@ -49,39 +77,35 @@ function isSimpleErrorResponse(body: unknown): body is SimpleErrorResponse {
   return typeof obj.error === "string";
 }
 
-function formatZodIssues(issues: ZodIssue[]): ApiErrorField[] {
-  return issues.map((issue) => ({
-    field: issue.path.length > 0 ? issue.path.join(".") : "(root)",
-    message: issue.message,
-    received: issue.received,
-  }));
-}
+/**
+ * Formats a parsed error for TTY output with verbose context.
+ */
+function formatErrorForTty(commandName: string, error: ParsedApiError): string {
+  const lines: string[] = [`${commandName}: ${error.message}`];
 
-function formatErrorsForTty(
-  commandName: string,
-  errors: ApiErrorField[],
-): string {
-  const lines = [`${commandName}: validation failed`];
-  for (const err of errors) {
-    const receivedPart =
-      err.received !== undefined
-        ? ` (received: ${JSON.stringify(err.received)})`
-        : "";
-    lines.push(`  ${err.field}: ${err.message}${receivedPart}`);
+  if (error.hint) {
+    lines.push(`  ${error.hint}`);
   }
+
+  if (error.details && error.details.length > 0) {
+    for (const issue of error.details) {
+      const receivedPart =
+        issue.received !== undefined
+          ? ` (received: ${JSON.stringify(issue.received)})`
+          : "";
+      lines.push(`  ${issue.path}: ${issue.message}${receivedPart}`);
+    }
+  }
+
   return lines.join("\n");
 }
 
-type FormatApiErrorResult = {
-  payload: ApiErrorPayload;
-  message: string;
-};
-
-export default async function formatApiError(
-  res: ResponseLike,
-  commandName: string,
-): Promise<FormatApiErrorResult> {
-  const code = res.status;
+/**
+ * Parses an API error response into a structured format.
+ * Handles both the new standardized format and legacy formats for backward compatibility.
+ */
+async function parseApiError(res: ResponseLike): Promise<ParsedApiError> {
+  const statusCode = res.status;
   let body: unknown;
 
   try {
@@ -89,41 +113,107 @@ export default async function formatApiError(
   } catch {
     // Failed to parse JSON body
     return {
-      payload: { status: "error", code },
-      message: `${commandName}: error (${code})`,
+      code: "error",
+      statusCode,
+      message: `Request failed with status ${statusCode}`,
+      hint: "Check if the daemon is running correctly",
     };
   }
 
-  // Handle Zod validation errors (from @hono/zod-validator)
-  if (isZodErrorResponse(body)) {
-    const errors = formatZodIssues(body.error.issues);
+  // Handle new standardized ApiErrorResponse format
+  if (isApiErrorResponse(body)) {
+    const { error } = body;
     return {
-      payload: {
-        status: "validation_error",
-        code,
-        message: "Validation failed",
-        errors,
-      },
-      message: formatErrorsForTty(commandName, errors),
+      code: error.code,
+      statusCode,
+      message: error.message,
+      hint: error.hint,
+      details: error.details,
     };
   }
 
-  // Handle simple error responses (from custom route handlers)
-  if (isSimpleErrorResponse(body)) {
-    const message = body.message || body.error;
+  // Handle legacy Zod validation error format
+  if (isLegacyZodErrorResponse(body)) {
+    const details = body.error.issues.map((issue) => ({
+      path: issue.path.length > 0 ? issue.path.join(".") : "(root)",
+      message: issue.message,
+      received: issue.received,
+    }));
+
     return {
-      payload: {
-        status: body.error,
-        code,
-        message,
-      },
-      message: `${commandName}: ${message}`,
+      code: "validation_error",
+      statusCode,
+      message: "Validation failed",
+      hint: "Check the field values and try again",
+      details,
+    };
+  }
+
+  // Handle legacy simple error format
+  if (isLegacySimpleErrorResponse(body)) {
+    return {
+      code: body.error,
+      statusCode,
+      message: body.message ?? body.error.replace(/_/g, " "),
+      hint: getDefaultHint(body.error),
     };
   }
 
   // Fallback for unknown error formats
   return {
-    payload: { status: "error", code },
-    message: `${commandName}: error (${code})`,
+    code: "error",
+    statusCode,
+    message: `Request failed with status ${statusCode}`,
+    hint: "Check daemon logs for details: crnd daemon logs",
   };
+}
+
+/**
+ * Returns a default hint for known legacy error codes.
+ */
+function getDefaultHint(errorCode: string): string | undefined {
+  const hints: Record<string, string> = {
+    job_not_found: "List available jobs with: crnd list",
+    run_not_found: "List job runs with: crnd runs <job-name>",
+    run_not_running:
+      "The job may have already completed. Check status with: crnd show <job-name>",
+    job_not_saved: "Check daemon logs for details: crnd daemon logs",
+    kill_failed: "Check job status with: crnd show <job-name>",
+    stop_failed: "Check job status with: crnd show <job-name>",
+    unauthorized: "Restart the daemon to generate a new token",
+  };
+  return hints[errorCode];
+}
+
+type FormatApiErrorResult = {
+  payload: ParsedApiError;
+  message: string;
+};
+
+/**
+ * Formats an API error response for CLI output.
+ * Returns both a structured payload (for JSON output) and a formatted message (for TTY output).
+ *
+ * @param res - The response object from the API call
+ * @param commandName - The name of the CLI command (for error messages)
+ * @returns An object with both the payload and formatted message
+ *
+ * @example
+ * const res = await client.jobs[":name"].$delete({ param: { name } });
+ * if (!res.ok) {
+ *   const { payload, message } = await formatApiError(res, "delete");
+ *   if (args.json) {
+ *     console.log(JSON.stringify(payload));
+ *   } else {
+ *     console.log(message);
+ *   }
+ * }
+ */
+export default async function formatApiError(
+  res: ResponseLike,
+  commandName: string,
+): Promise<FormatApiErrorResult> {
+  const payload = await parseApiError(res);
+  const message = formatErrorForTty(commandName, payload);
+  return { payload, message };
 }

@@ -5,6 +5,7 @@ import getVersion from "../../shared/version";
 import type createJobsFileSync from "../jobs/createJobsFileSync";
 import type createScheduler from "../scheduler/createScheduler";
 import createAuthMiddleware from "./createAuthMiddleware";
+import createErrorHandler from "./createErrorHandler";
 import registerExportRoute from "./routes/registerExportRoute";
 import registerHealthRoute from "./routes/registerHealthRoute";
 import registerImportRoute from "./routes/registerImportRoute";
@@ -40,9 +41,11 @@ export default function createApp(
   scheduler: Scheduler,
   jobsFileSync: JobsFileSync,
   shutdown: () => void,
+  logger?: { error: (data: Record<string, unknown>) => void },
 ) {
   const parsed = createAppOptionsSchema.parse(options);
   const app = new Hono()
+    .onError(createErrorHandler(logger))
     .use("*", createAuthMiddleware(parsed.token))
     .route(
       "/",

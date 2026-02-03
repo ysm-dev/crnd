@@ -29,6 +29,7 @@ crnd is a zero-config, local-only scheduler and process manager with a verb-firs
 - RPC: Hono server + Hono RPC client (`hono/client`).
 - Cron parsing: Croner (timezone-aware, 5-field cron).
 - Validation middleware: `@hono/zod-validator` (`zValidator`) for all RPC inputs.
+- Error formatting: `zod-validation-error` for user-friendly validation messages.
 - IDs: ULID (`ulid` + monotonic factory).
 - Tests: `bun:test`.
 - Tooling: Biome v2 (format/lint/check), tsgo (TypeScript preview) for typecheck.
@@ -158,6 +159,33 @@ paused = false
 ### Auth
 - Token-based auth via `Authorization: Bearer <token>` header.
 - All routes validated using `zValidator` and Zod schemas.
+
+### Error Response Format
+All API errors follow a standardized format with actionable hints:
+```json
+{
+  "error": {
+    "code": "job_not_found",
+    "message": "Job \"backup\" was not found",
+    "hint": "List available jobs with: crnd list",
+    "details": [...]
+  }
+}
+```
+
+Fields:
+- `code`: Machine-readable error code for programmatic handling.
+- `message`: Human-readable description of what went wrong.
+- `hint`: Actionable suggestion for how to fix the error.
+- `details`: Array of validation issues (for validation errors only).
+
+Error codes:
+- Validation (400): `validation_error`, `confirmation_required`
+- Not found (404): `job_not_found`, `run_not_found`
+- Conflict (409): `run_not_running`
+- Server (500): `job_not_saved`, `kill_failed`, `stop_failed`, `import_failed`
+- Auth (401): `unauthorized`
+- Daemon (503): `daemon_unreachable`, `daemon_start_failed`
 
 ### RPC Endpoints (summary)
 - `GET /health` -> daemon status and version.

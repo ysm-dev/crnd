@@ -1,15 +1,16 @@
-import { zValidator } from "@hono/zod-validator";
 import { desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type openDatabase from "../../../db/openDatabase";
 import { jobs, runs } from "../../../db/schema";
 import formatRunRow from "../../../shared/runs/formatRunRow";
+import createZValidator from "../createZValidator";
+import { jobNotFoundResponse } from "./createErrorResponse";
 
 type Db = ReturnType<typeof openDatabase>["orm"];
 
 const paramsSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1, "Job name is required"),
 });
 
 const querySchema = z.object({
@@ -19,14 +20,14 @@ const querySchema = z.object({
 export default function registerJobRunsRoute(db: Db) {
   return new Hono().get(
     "/jobs/:name/runs",
-    zValidator("param", paramsSchema),
-    zValidator("query", querySchema),
+    createZValidator("param", paramsSchema),
+    createZValidator("query", querySchema),
     (c) => {
       const { name } = c.req.valid("param");
       const { limit } = c.req.valid("query");
       const row = db.select().from(jobs).where(eq(jobs.name, name)).get();
       if (!row) {
-        return c.json({ error: "job_not_found" }, 404);
+        return c.json(jobNotFoundResponse(name), 404);
       }
 
       const parsedLimit = limit ? Number(limit) : 20;

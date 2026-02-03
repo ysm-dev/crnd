@@ -1,6 +1,11 @@
 import { defineCommand } from "citty";
 import ensureDaemon from "../ensureDaemon";
-import formatApiError from "../errors/formatApiError";
+import {
+  formatApiError,
+  handleDaemonStartFailed,
+  handleDaemonUnreachable,
+  printError,
+} from "../errors";
 
 export default function createShowCommand() {
   return defineCommand({
@@ -22,13 +27,7 @@ export default function createShowCommand() {
     async run({ args }) {
       const client = await ensureDaemon();
       if (!client) {
-        const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
-          console.log(JSON.stringify(payload));
-        } else {
-          console.log("show: daemon start failed");
-        }
-        process.exitCode = 3;
+        handleDaemonStartFailed("show", { json: args.json });
         return;
       }
 
@@ -36,29 +35,10 @@ export default function createShowCommand() {
         const res = await client.jobs[":name"].$get({
           param: { name: args.name },
         });
-        if (res.status === 404) {
-          const payload = {
-            status: "not_found",
-            code: 404,
-            message: `Job "${args.name}" not found`,
-          };
-          if (!process.stdout.isTTY || args.json) {
-            console.log(JSON.stringify(payload));
-          } else {
-            console.log(`show: job "${args.name}" not found`);
-            console.log("  List available jobs with: crnd list");
-          }
-          process.exitCode = 1;
-          return;
-        }
 
         if (!res.ok) {
-          const { payload, message } = await formatApiError(res, "show");
-          if (!process.stdout.isTTY || args.json) {
-            console.log(JSON.stringify(payload));
-          } else {
-            console.log(message);
-          }
+          const { payload } = await formatApiError(res, "show");
+          printError("show", payload, { json: args.json });
           process.exitCode = 1;
           return;
         }
@@ -85,14 +65,7 @@ export default function createShowCommand() {
         }
         console.log(`paused: ${data.paused}`);
       } catch {
-        const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
-          console.log(JSON.stringify(payload));
-        } else {
-          console.log("show: daemon unreachable");
-          console.log("  Start the daemon with: crnd daemon start");
-        }
-        process.exitCode = 3;
+        handleDaemonUnreachable("show", { json: args.json });
       }
     },
   });
