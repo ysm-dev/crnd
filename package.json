@@ -1,6 +1,6 @@
 {
   "name": "crnd",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Agent-first CLI for cron scheduling and process management",
   "type": "module",
