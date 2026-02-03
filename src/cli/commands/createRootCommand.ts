@@ -17,6 +17,7 @@ import createShowCommand from "./createShowCommand";
 import createStatusCommand from "./createStatusCommand";
 import createStopCommand from "./createStopCommand";
 import createUpdateCommand from "./createUpdateCommand";
+import createUpgradeCommand from "./createUpgradeCommand";
 import createDaemonCommand from "./daemon/createDaemonCommand";
 
 export default function createRootCommand() {
@@ -29,6 +30,7 @@ export default function createRootCommand() {
     subCommands: {
       schedule: createScheduleCommand(),
       update: createUpdateCommand(),
+      upgrade: createUpgradeCommand(),
       list: createListCommand(),
       show: createShowCommand(),
       runs: createRunsCommand(),

@@ -225,6 +225,7 @@ Error codes:
 - `crnd export`
 - `crnd import`
 - `crnd doctor`
+- `crnd upgrade`
 - `crnd daemon <start|stop|status|install|uninstall>`
 
 ### Flag rules
@@ -308,5 +309,44 @@ Relative times are converted to absolute ISO 8601 timestamps at CLI parse time b
 ## 17. Security and Privacy
 - Local-only RPC bound to 127.0.0.1.
 - Token stored with user-only permissions.
-- No outbound network calls at runtime.
+- No outbound network calls at runtime (except auto-update version checks).
 - Logs and outputs remain on local disk; no telemetry.
+
+## 18. Auto-Update
+### Behavior
+- Checks npm registry for latest version before command execution (like Homebrew).
+- 24-hour cooldown between checks (configurable via `CRND_AUTO_UPDATE_SECS`).
+- Auto-installs updates gracefully: stops daemon, updates, restarts daemon.
+- Skips update check for certain commands: `upgrade`, `daemon`, `--help`, `--version`.
+
+### Environment Variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CRND_NO_AUTO_UPDATE` | unset | Set to `1` to disable auto-update |
+| `CRND_AUTO_UPDATE_SECS` | `86400` | Seconds between version checks (24 hours) |
+
+### Install Method Detection
+Auto-update detects the installation method and uses the appropriate update command:
+- **npm**: `npm install -g crnd@latest`
+- **bun**: `bun install -g crnd@latest`
+- **brew**: `brew upgrade crnd`
+- **unknown**: Prints manual update instructions
+
+### `crnd upgrade` Command
+```sh
+crnd upgrade           # Check and update if available
+crnd upgrade --check   # Check for updates without installing
+crnd upgrade --force   # Force update even if at latest version
+```
+
+### Update Cache
+- Stored in `state/update.json` with schema:
+  ```json
+  {
+    "lastCheck": "2026-02-03T10:00:00Z",
+    "latestVersion": "0.3.0",
+    "currentVersionAtCheck": "0.2.0"
+  }
+  ```
+- Version check queries npm registry: `https://registry.npmjs.org/crnd`
+- 5-second timeout for registry requests; failures are silent.

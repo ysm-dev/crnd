@@ -80,6 +80,8 @@ crnd export                                       # dump jobs.toml
 crnd import -f jobs.toml                          # load jobs
 crnd daemon install                               # autostart on login
 crnd doctor                                       # check setup
+crnd upgrade                                      # update to latest version
+crnd upgrade --check                              # check for updates
 ```
 
 All commands support `--json` for machine-readable output.
@@ -112,6 +114,28 @@ Edit this file directly. The daemon watches it and syncs automatically.
 - Daemon runs per-user, binds to `127.0.0.1`
 - Autostart via launchd (macOS), systemd user (Linux), or Task Scheduler (Windows)
 - Stdout/stderr saved per-run in `state/runs/<jobId>/<runId>.out|.err`
+- Auto-updates like Homebrew (checks every 24hrs, updates before commands)
+
+## Auto-Update
+
+crnd checks for updates automatically (like Homebrew). To disable:
+
+```sh
+export CRND_NO_AUTO_UPDATE=1
+```
+
+Or configure the check interval (default 24 hours):
+
+```sh
+export CRND_AUTO_UPDATE_SECS=3600  # check every hour
+```
+
+Manual update:
+
+```sh
+crnd upgrade              # update now
+crnd upgrade --check      # just check, don't update
+```
 
 ## Development
 
