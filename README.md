@@ -1,6 +1,6 @@
 # crnd
 
-Cron daemon built for agents. JSON output, no prompts, real OS processes.
+*Pronounced "crowned"* — Cron daemon built for agents. JSON output, no prompts, real OS processes.
 
 ## Install
 
