@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { defineCommand } from "citty";
-import createRpcClient from "../../shared/rpc/createRpcClient";
+import ensureDaemon from "../ensureDaemon";
 import formatApiError from "../errors/formatApiError";
 
 export default function createLogsCommand() {
@@ -25,14 +25,13 @@ export default function createLogsCommand() {
       },
     },
     async run({ args }) {
-      const client = createRpcClient();
+      const client = await ensureDaemon();
       if (!client) {
-        const payload = { status: "daemon_unreachable", code: 503 };
+        const payload = { status: "daemon_start_failed", code: 503 };
         if (!process.stdout.isTTY || args.json) {
           console.log(JSON.stringify(payload));
         } else {
-          console.log("logs: daemon unreachable");
-          console.log("  Start the daemon with: crnd daemon start");
+          console.log("logs: daemon start failed");
         }
         process.exitCode = 3;
         return;

@@ -1,6 +1,6 @@
 import { defineCommand } from "citty";
 import isOverlapPolicy from "../../shared/jobs/isOverlapPolicy";
-import createRpcClient from "../../shared/rpc/createRpcClient";
+import ensureDaemon from "../ensureDaemon";
 import formatApiError from "../errors/formatApiError";
 import parseRelativeTime from "../utils/parseRelativeTime";
 import getCommandArgs from "./getCommandArgs";
@@ -64,6 +64,8 @@ export default function createScheduleCommand() {
       },
     },
     async run({ args }) {
+      // === All validation happens BEFORE daemon connection ===
+
       const command = getCommandArgs(process.argv);
       if (command.length === 0) {
         const payload = {
@@ -89,19 +91,6 @@ export default function createScheduleCommand() {
           );
         }
         process.exitCode = 2;
-        return;
-      }
-
-      const client = createRpcClient();
-      if (!client) {
-        const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
-          console.log(JSON.stringify(payload));
-        } else {
-          console.log("schedule: daemon unreachable");
-          console.log("  Start the daemon with: crnd daemon start");
-        }
-        process.exitCode = 3;
         return;
       }
 
@@ -132,6 +121,7 @@ export default function createScheduleCommand() {
         process.exitCode = 2;
         return;
       }
+
       const timeoutMs = args.timeout ? Number(args.timeout) : undefined;
       if (args.timeout && Number.isNaN(timeoutMs)) {
         const payload = {
@@ -252,6 +242,22 @@ export default function createScheduleCommand() {
         args.overlap && isOverlapPolicy(args.overlap)
           ? args.overlap
           : undefined;
+
+      // === Daemon connection (with auto-start) ===
+
+      const client = await ensureDaemon();
+      if (!client) {
+        const payload = { status: "daemon_start_failed", code: 503 };
+        if (!process.stdout.isTTY || args.json) {
+          console.log(JSON.stringify(payload));
+        } else {
+          console.log("schedule: daemon start failed");
+        }
+        process.exitCode = 3;
+        return;
+      }
+
+      // === Build request payload ===
 
       const payload = {
         name: args.name,

@@ -1,5 +1,5 @@
 import { defineCommand } from "citty";
-import createRpcClient from "../../shared/rpc/createRpcClient";
+import ensureDaemon from "../ensureDaemon";
 import formatApiError from "../errors/formatApiError";
 
 export default function createRunsCommand() {
@@ -24,19 +24,7 @@ export default function createRunsCommand() {
       },
     },
     async run({ args }) {
-      const client = createRpcClient();
-      if (!client) {
-        const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
-          console.log(JSON.stringify(payload));
-        } else {
-          console.log("runs: daemon unreachable");
-          console.log("  Start the daemon with: crnd daemon start");
-        }
-        process.exitCode = 3;
-        return;
-      }
-
+      // Validate limit before daemon connection
       let limit: number | null = null;
       if (args.limit) {
         const parsed = Number(args.limit);
@@ -65,6 +53,18 @@ export default function createRunsCommand() {
           return;
         }
         limit = parsed;
+      }
+
+      const client = await ensureDaemon();
+      if (!client) {
+        const payload = { status: "daemon_start_failed", code: 503 };
+        if (!process.stdout.isTTY || args.json) {
+          console.log(JSON.stringify(payload));
+        } else {
+          console.log("runs: daemon start failed");
+        }
+        process.exitCode = 3;
+        return;
       }
 
       try {

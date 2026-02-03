@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { defineCommand } from "citty";
-import createRpcClient from "../../shared/rpc/createRpcClient";
+import ensureDaemon from "../ensureDaemon";
 import formatApiError from "../errors/formatApiError";
 
 export default function createImportCommand() {
@@ -21,19 +21,7 @@ export default function createImportCommand() {
       },
     },
     async run({ args }) {
-      const client = createRpcClient();
-      if (!client) {
-        const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
-          console.log(JSON.stringify(payload));
-        } else {
-          console.log("import: daemon unreachable");
-          console.log("  Start the daemon with: crnd daemon start");
-        }
-        process.exitCode = 3;
-        return;
-      }
-
+      // Validate file before daemon connection
       let toml: string;
       try {
         toml = readFileSync(args.file, "utf-8");
@@ -56,6 +44,18 @@ export default function createImportCommand() {
           console.log("  Ensure the file exists and is readable");
         }
         process.exitCode = 2;
+        return;
+      }
+
+      const client = await ensureDaemon();
+      if (!client) {
+        const payload = { status: "daemon_start_failed", code: 503 };
+        if (!process.stdout.isTTY || args.json) {
+          console.log(JSON.stringify(payload));
+        } else {
+          console.log("import: daemon start failed");
+        }
+        process.exitCode = 3;
         return;
       }
 

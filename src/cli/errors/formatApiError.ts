@@ -72,7 +72,7 @@ function formatErrorsForTty(
   return lines.join("\n");
 }
 
-export type FormatApiErrorResult = {
+type FormatApiErrorResult = {
   payload: ApiErrorPayload;
   message: string;
 };
