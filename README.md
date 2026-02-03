@@ -5,8 +5,13 @@ Cron daemon built for agents. JSON output, no prompts, real OS processes.
 ## Install
 
 ```sh
-# npm/bun
+# global install
+bun i -g crnd
+npm i -g crnd
+
+# or run directly
 bunx crnd
+npx crnd
 
 # or homebrew
 brew install ysm-dev/crnd/crnd
