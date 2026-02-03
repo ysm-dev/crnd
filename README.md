@@ -17,6 +17,16 @@ npx crnd
 brew install ysm-dev/crnd/crnd
 ```
 
+## Agent Skill
+
+Install the crnd skill for your coding agent (Claude Code, Cursor, Codex, etc.):
+
+```sh
+npx skills add ysm-dev/crnd
+```
+
+This teaches your agent how to schedule and manage cron jobs using crnd.
+
 ## 30 seconds to your first job
 
 ```sh
