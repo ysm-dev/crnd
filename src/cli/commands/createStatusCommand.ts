@@ -24,7 +24,7 @@ export default function createStatusCommand() {
         const client = await ensureDaemon();
         if (!client) {
           const payload = { status: "daemon_start_failed", code: 503 };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log("status: daemon start failed");
@@ -43,7 +43,7 @@ export default function createStatusCommand() {
               code: 404,
               message: `Job "${args.name}" not found`,
             };
-            if (!process.stdout.isTTY || args.json) {
+            if (args.json) {
               console.log(JSON.stringify(payload));
             } else {
               console.log(`status: job "${args.name}" not found`);
@@ -55,7 +55,7 @@ export default function createStatusCommand() {
 
           if (!jobRes.ok) {
             const { payload, message } = await formatApiError(jobRes, "status");
-            if (!process.stdout.isTTY || args.json) {
+            if (args.json) {
               console.log(JSON.stringify(payload));
             } else {
               console.log(message);
@@ -76,7 +76,7 @@ export default function createStatusCommand() {
             latestRun,
           };
 
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
             return;
           }
@@ -94,7 +94,7 @@ export default function createStatusCommand() {
           return;
         } catch {
           const payload = { status: "daemon_unreachable", code: 503 };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log("status: daemon unreachable");
@@ -108,7 +108,7 @@ export default function createStatusCommand() {
       const client = createRpcClient();
       if (!client) {
         const payload = { status: "daemon_stopped", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("daemon: stopped");
@@ -122,7 +122,7 @@ export default function createStatusCommand() {
         const res = await client.health.$get();
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "status");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -132,7 +132,7 @@ export default function createStatusCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -142,7 +142,7 @@ export default function createStatusCommand() {
         console.log(`version: ${data.version}`);
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("status: daemon unreachable");

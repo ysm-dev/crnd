@@ -23,7 +23,7 @@ export default function createStopCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("stop: daemon start failed");
@@ -42,7 +42,7 @@ export default function createStopCommand() {
             code: 404,
             message: `Job "${args.name}" not found`,
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`stop: job "${args.name}" not found`);
@@ -58,7 +58,7 @@ export default function createStopCommand() {
             code: 409,
             message: `Job "${args.name}" is not currently running`,
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`stop: job "${args.name}" is not currently running`);
@@ -70,7 +70,7 @@ export default function createStopCommand() {
 
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "stop");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -80,7 +80,7 @@ export default function createStopCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -88,7 +88,7 @@ export default function createStopCommand() {
         console.log(`stop: requested (${data.runId})`);
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("stop: daemon unreachable");

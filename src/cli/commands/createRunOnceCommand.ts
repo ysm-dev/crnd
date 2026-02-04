@@ -23,7 +23,7 @@ export default function createRunOnceCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("run-once: daemon start failed");
@@ -40,7 +40,7 @@ export default function createRunOnceCommand() {
             code: 404,
             message: `Job "${args.name}" not found`,
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`run-once: job "${args.name}" not found`);
@@ -52,7 +52,7 @@ export default function createRunOnceCommand() {
 
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "run-once");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -62,7 +62,7 @@ export default function createRunOnceCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -71,7 +71,7 @@ export default function createRunOnceCommand() {
         console.log(`run-once: started (${data.jobId})${suffix}`);
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("run-once: daemon unreachable");

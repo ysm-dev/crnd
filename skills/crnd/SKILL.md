@@ -5,7 +5,7 @@ description: Schedule and manage cron jobs, one-time scheduled tasks, and recurr
 
 # crnd
 
-Local cron daemon with JSON output, no prompts, real OS processes. Built for agents and automation.
+Local cron daemon with text-first output, no prompts, real OS processes. Use `--json` for machine-readable output.
 
 ## Installation
 
@@ -35,7 +35,7 @@ brew install ysm-dev/crnd/crnd
 | Run history                    | `crnd runs -n NAME`                                   |
 | Check setup                    | `crnd doctor`                                         |
 
-All commands support `--json` for machine-readable output.
+All commands default to text output; use `--json` for machine-readable output.
 
 ## Scheduling Jobs
 

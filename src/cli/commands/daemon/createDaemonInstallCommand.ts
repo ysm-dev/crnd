@@ -23,7 +23,7 @@ export default function createDaemonInstallCommand() {
     run({ args }) {
       if (process.env.CRND_AUTOSTART_DRY_RUN === "1") {
         const payload = { ok: true, dryRun: true };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("daemon: install dry run");
@@ -53,7 +53,7 @@ export default function createDaemonInstallCommand() {
         const result = Bun.spawnSync(["launchctl", "load", plistPath]);
 
         const ok = result.success;
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify({ ok, path: plistPath }));
         } else {
           console.log(
@@ -89,7 +89,7 @@ export default function createDaemonInstallCommand() {
           "crnd.service",
         ]);
         const ok = result.success;
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify({ ok, path: servicePath }));
         } else {
           console.log(
@@ -119,7 +119,7 @@ export default function createDaemonInstallCommand() {
           taskCommand,
         ]);
         const ok = result.success;
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify({ ok, task: taskName }));
         } else {
           console.log(
@@ -133,7 +133,7 @@ export default function createDaemonInstallCommand() {
       }
 
       const payload = { ok: false, error: "unsupported_platform" };
-      if (!process.stdout.isTTY || args.json) {
+      if (args.json) {
         console.log(JSON.stringify(payload));
       } else {
         console.log("daemon: unsupported platform");

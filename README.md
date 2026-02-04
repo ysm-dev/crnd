@@ -1,6 +1,6 @@
 # crnd
 
-*Pronounced "crowned"* — Cron daemon built for agents. JSON output, no prompts, real OS processes.
+*Pronounced "crowned"* — Cron daemon built for agents. Text-first output, no prompts, real OS processes.
 
 ## Install
 
@@ -84,7 +84,7 @@ crnd upgrade                                      # update to latest version
 crnd upgrade --check                              # check for updates
 ```
 
-All commands support `--json` for machine-readable output.
+All commands default to text output; use `--json` for machine-readable output.
 
 ## jobs.toml
 

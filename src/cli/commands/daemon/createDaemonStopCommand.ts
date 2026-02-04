@@ -17,7 +17,7 @@ export default function createDaemonStopCommand() {
       const client = createRpcClient();
       if (!client) {
         const payload = { status: "not_running" };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("daemon: not running");
@@ -30,7 +30,7 @@ export default function createDaemonStopCommand() {
         const res = await client.daemon.shutdown.$post();
         if (!res.ok) {
           const payload = { status: "stop_failed", code: res.status };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`daemon: stop failed (${res.status})`);
@@ -40,14 +40,14 @@ export default function createDaemonStopCommand() {
         }
 
         const payload = { status: "stopped" };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("daemon: stopped");
         }
       } catch {
         const payload = { status: "stop_failed" };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("daemon: stop failed");

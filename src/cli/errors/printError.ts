@@ -27,7 +27,7 @@ export default function printError(
   error: ParsedApiError,
   options: PrintErrorOptions = {},
 ): void {
-  if (!process.stdout.isTTY || options.json) {
+  if (options.json) {
     console.log(JSON.stringify(error));
     return;
   }

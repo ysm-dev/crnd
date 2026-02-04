@@ -79,7 +79,7 @@ export default function createDoctorCommand() {
       }
 
       const ok = results.every((item) => item.ok);
-      if (!process.stdout.isTTY || args.json) {
+      if (args.json) {
         console.log(JSON.stringify({ ok, results }));
       } else {
         for (const item of results) {
