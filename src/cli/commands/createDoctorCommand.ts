@@ -53,12 +53,19 @@ export default function createDoctorCommand() {
       }
 
       const autostartPath = getAutostartPath();
+      const platform = process.platform;
+      const supportedPlatforms = ["darwin", "linux", "win32"];
       if (process.env.CRND_AUTOSTART_DRY_RUN === "1") {
         // In dry-run mode, report autostart as not installed since install was skipped
         results.push({ check: "autostart", ok: false, detail: "dry_run" });
       } else if (!autostartPath) {
-        results.push({ check: "autostart", ok: false, detail: "unsupported" });
-      } else if (process.platform === "win32") {
+        const supportedList = supportedPlatforms.join(", ");
+        results.push({
+          check: "autostart",
+          ok: false,
+          detail: `unsupported on ${platform}; supported: ${supportedList}; start manually with: crnd daemon start`,
+        });
+      } else if (platform === "win32") {
         const result = Bun.spawnSync([
           "schtasks",
           "/Query",

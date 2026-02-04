@@ -27,6 +27,7 @@ export default function createDaemonUninstallCommand() {
       }
 
       const platform = process.platform;
+      const supportedPlatforms = ["darwin", "linux", "win32"];
 
       if (platform === "darwin") {
         const plistPath = path.join(
@@ -87,11 +88,24 @@ export default function createDaemonUninstallCommand() {
         return;
       }
 
-      const payload = { ok: false, error: "unsupported_platform" };
+      const supportedList = supportedPlatforms.join(", ");
+      const message = `daemon uninstall: autostart service is not supported on ${platform}`;
+      const hint =
+        `Supported platforms: ${supportedList}. ` +
+        "If you set up autostart manually, remove that service; otherwise stop the daemon with: crnd daemon stop";
+      const payload = {
+        ok: false,
+        error: "unsupported_platform",
+        message,
+        hint,
+        platform,
+        supportedPlatforms,
+      };
       if (args.json) {
         console.log(JSON.stringify(payload));
       } else {
-        console.log("daemon: unsupported platform");
+        console.log(message);
+        console.log(`  ${hint}`);
       }
       process.exitCode = 1;
     },
