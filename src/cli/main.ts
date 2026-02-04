@@ -7,11 +7,13 @@ export default async function runCli() {
   // Skip for certain commands that shouldn't trigger updates
   const args = process.argv.slice(2);
   const firstArg = args[0];
+  const hasJsonFlag = args.includes("--json") || args.includes("-j");
   // Skip for subcommands that handle updates themselves
   const skipSubcommands = ["upgrade", "daemon"];
   // Skip for top-level flags (only when they're the first argument)
   const skipTopLevelFlags = ["--help", "-h", "--version", "-V"];
   const shouldSkipUpdate =
+    hasJsonFlag ||
     skipSubcommands.some((cmd) => args.includes(cmd)) ||
     (firstArg && skipTopLevelFlags.includes(firstArg));
 

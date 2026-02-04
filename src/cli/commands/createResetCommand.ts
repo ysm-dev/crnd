@@ -23,7 +23,7 @@ export default function createResetCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("reset: daemon start failed");
@@ -42,7 +42,7 @@ export default function createResetCommand() {
             code: 404,
             message: `Job "${args.name}" not found`,
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`reset: job "${args.name}" not found`);
@@ -54,7 +54,7 @@ export default function createResetCommand() {
 
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "reset");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -64,7 +64,7 @@ export default function createResetCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -72,7 +72,7 @@ export default function createResetCommand() {
         console.log(`reset: ${data.name}`);
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("reset: daemon unreachable");

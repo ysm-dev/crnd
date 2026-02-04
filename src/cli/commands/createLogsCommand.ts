@@ -28,7 +28,7 @@ export default function createLogsCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("logs: daemon start failed");
@@ -48,7 +48,7 @@ export default function createLogsCommand() {
             code: 404,
             message: `Job "${args.name}" not found`,
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`logs: job "${args.name}" not found`);
@@ -60,7 +60,7 @@ export default function createLogsCommand() {
 
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "logs");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -76,7 +76,7 @@ export default function createLogsCommand() {
             code: 200,
             message: `Job "${args.name}" has no runs yet`,
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`logs: job "${args.name}" has no runs yet`);
@@ -86,7 +86,7 @@ export default function createLogsCommand() {
         }
 
         const run = data[0];
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(run));
           return;
         }
@@ -124,7 +124,7 @@ export default function createLogsCommand() {
         }
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("logs: daemon unreachable");

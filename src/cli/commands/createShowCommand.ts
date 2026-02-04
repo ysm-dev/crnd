@@ -44,7 +44,7 @@ export default function createShowCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }

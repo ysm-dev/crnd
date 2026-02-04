@@ -37,7 +37,7 @@ export default function createImportCommand() {
             },
           ],
         };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log(`import: could not read file "${args.file}"`);
@@ -50,7 +50,7 @@ export default function createImportCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("import: daemon start failed");
@@ -63,7 +63,7 @@ export default function createImportCommand() {
         const res = await client.import.$post({ json: { toml } });
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "import");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -73,7 +73,7 @@ export default function createImportCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -81,7 +81,7 @@ export default function createImportCommand() {
         console.log("import: ok");
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("import: daemon unreachable");

@@ -231,7 +231,7 @@ Error codes:
 ### Flag rules
 - All flags have shorthands.
 - No interactive prompts; destructive ops require `--force/-f`.
-- Output defaults to human-readable text on TTY and JSON on non-TTY.
+- Output defaults to human-readable text.
 - `--json/-j` forces JSON output; `--quiet/-q` suppresses non-essential text.
 
 ### Command examples

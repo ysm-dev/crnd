@@ -18,7 +18,7 @@ export default function createListCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("list: daemon start failed");
@@ -31,7 +31,7 @@ export default function createListCommand() {
         const res = await client.jobs.$get();
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "list");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -41,7 +41,7 @@ export default function createListCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -56,7 +56,7 @@ export default function createListCommand() {
         }
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("list: daemon unreachable");

@@ -18,7 +18,7 @@ export default function createDaemonUninstallCommand() {
     run({ args }) {
       if (process.env.CRND_AUTOSTART_DRY_RUN === "1") {
         const payload = { ok: true, dryRun: true };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("daemon: uninstall dry run");
@@ -40,7 +40,7 @@ export default function createDaemonUninstallCommand() {
           unlinkSync(plistPath);
         }
 
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify({ ok: true, path: plistPath }));
         } else {
           console.log(`daemon: uninstalled (${plistPath})`);
@@ -68,7 +68,7 @@ export default function createDaemonUninstallCommand() {
           unlinkSync(servicePath);
         }
 
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify({ ok: true, path: servicePath }));
         } else {
           console.log(`daemon: uninstalled (${servicePath})`);
@@ -79,7 +79,7 @@ export default function createDaemonUninstallCommand() {
       if (platform === "win32") {
         const taskName = "crnd";
         Bun.spawnSync(["schtasks", "/Delete", "/TN", taskName, "/F"]);
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify({ ok: true, task: taskName }));
         } else {
           console.log(`daemon: uninstalled (${taskName})`);
@@ -88,7 +88,7 @@ export default function createDaemonUninstallCommand() {
       }
 
       const payload = { ok: false, error: "unsupported_platform" };
-      if (!process.stdout.isTTY || args.json) {
+      if (args.json) {
         console.log(JSON.stringify(payload));
       } else {
         console.log("daemon: unsupported platform");

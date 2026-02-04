@@ -79,7 +79,7 @@ export default function createScheduleCommand() {
             },
           ],
         };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("schedule: validation failed");
@@ -111,7 +111,7 @@ export default function createScheduleCommand() {
             },
           ],
         };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("schedule: validation failed");
@@ -136,7 +136,7 @@ export default function createScheduleCommand() {
             },
           ],
         };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("schedule: validation failed");
@@ -167,7 +167,7 @@ export default function createScheduleCommand() {
           message: "Invalid schedule",
           errors: [{ field: "schedule", message }],
         };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("schedule: validation failed");
@@ -201,7 +201,7 @@ export default function createScheduleCommand() {
               },
             ],
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log("schedule: validation failed");
@@ -226,7 +226,7 @@ export default function createScheduleCommand() {
             },
           ],
         };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("schedule: validation failed");
@@ -248,7 +248,7 @@ export default function createScheduleCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("schedule: daemon start failed");
@@ -280,7 +280,7 @@ export default function createScheduleCommand() {
             res,
             "schedule",
           );
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(errorPayload));
           } else {
             console.log(message);
@@ -290,7 +290,7 @@ export default function createScheduleCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -298,7 +298,7 @@ export default function createScheduleCommand() {
         console.log(`job: ${data.name} (${data.id})`);
       } catch {
         const errorPayload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(errorPayload));
         } else {
           console.log("schedule: daemon unreachable");

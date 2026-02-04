@@ -41,7 +41,7 @@ export default function createRunsCommand() {
               },
             ],
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log("runs: validation failed");
@@ -58,7 +58,7 @@ export default function createRunsCommand() {
       const client = await ensureDaemon();
       if (!client) {
         const payload = { status: "daemon_start_failed", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("runs: daemon start failed");
@@ -78,7 +78,7 @@ export default function createRunsCommand() {
             code: 404,
             message: `Job "${args.name}" not found`,
           };
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(`runs: job "${args.name}" not found`);
@@ -90,7 +90,7 @@ export default function createRunsCommand() {
 
         if (!res.ok) {
           const { payload, message } = await formatApiError(res, "runs");
-          if (!process.stdout.isTTY || args.json) {
+          if (args.json) {
             console.log(JSON.stringify(payload));
           } else {
             console.log(message);
@@ -100,7 +100,7 @@ export default function createRunsCommand() {
         }
 
         const data = await res.json();
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(data));
           return;
         }
@@ -115,7 +115,7 @@ export default function createRunsCommand() {
         }
       } catch {
         const payload = { status: "daemon_unreachable", code: 503 };
-        if (!process.stdout.isTTY || args.json) {
+        if (args.json) {
           console.log(JSON.stringify(payload));
         } else {
           console.log("runs: daemon unreachable");

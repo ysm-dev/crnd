@@ -22,7 +22,7 @@ export default function createDaemonStartCommand() {
           const res = await existing.health.$get();
           if (res.ok) {
             const payload = { status: "already_running" };
-            if (!process.stdout.isTTY || args.json) {
+            if (args.json) {
               console.log(JSON.stringify(payload));
             } else {
               console.log("daemon: already running");
@@ -51,7 +51,7 @@ export default function createDaemonStartCommand() {
           const res = await client.health.$get();
           if (res.ok) {
             const data = await res.json();
-            if (!process.stdout.isTTY || args.json) {
+            if (args.json) {
               console.log(JSON.stringify({ status: "started", daemon: data }));
             } else {
               console.log("daemon: started");
@@ -62,7 +62,7 @@ export default function createDaemonStartCommand() {
       }
 
       const payload = { status: "start_timeout" };
-      if (!process.stdout.isTTY || args.json) {
+      if (args.json) {
         console.log(JSON.stringify(payload));
       } else {
         console.log("daemon: start timeout");

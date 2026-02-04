@@ -31,7 +31,7 @@ export default function createUpgradeCommand() {
     },
     async run({ args }) {
       const currentVersion = getVersion();
-      const jsonOutput = !process.stdout.isTTY || args.json;
+      const jsonOutput = Boolean(args.json);
 
       // Always fetch latest version for explicit upgrade command
       const latestVersion = await checkLatestVersion();
