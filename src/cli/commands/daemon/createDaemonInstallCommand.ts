@@ -35,6 +35,7 @@ export default function createDaemonInstallCommand() {
       const stderrPath = path.join(getStateDir(), "daemon.err");
       const daemonArgs = getDaemonServiceArgs();
       const platform = process.platform;
+      const supportedPlatforms = ["darwin", "linux", "win32"];
 
       if (platform === "darwin") {
         const plistPath = path.join(
@@ -132,11 +133,22 @@ export default function createDaemonInstallCommand() {
         return;
       }
 
-      const payload = { ok: false, error: "unsupported_platform" };
+      const supportedList = supportedPlatforms.join(", ");
+      const message = `daemon install: autostart service is not supported on ${platform}`;
+      const hint = `Supported platforms: ${supportedList}. Start manually with: crnd daemon start`;
+      const payload = {
+        ok: false,
+        error: "unsupported_platform",
+        message,
+        hint,
+        platform,
+        supportedPlatforms,
+      };
       if (args.json) {
         console.log(JSON.stringify(payload));
       } else {
-        console.log("daemon: unsupported platform");
+        console.log(message);
+        console.log(`  ${hint}`);
       }
       process.exitCode = 1;
     },
