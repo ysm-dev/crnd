@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { z } from "zod";
 import type openDatabase from "../../db/openDatabase";
 import getVersion from "../../shared/version";
@@ -46,6 +47,7 @@ export default function createApp(
   const parsed = createAppOptionsSchema.parse(options);
   const app = new Hono()
     .onError(createErrorHandler(logger))
+    .use("*", cors())
     .use("*", createAuthMiddleware(parsed.token))
     .route(
       "/",

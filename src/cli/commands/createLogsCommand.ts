@@ -13,15 +13,18 @@ export default function createLogsCommand() {
       name: {
         type: "string",
         alias: "n",
+        description: "Job name",
         required: true,
       },
       show: {
         type: "boolean",
         alias: "s",
+        description: "Print log contents",
       },
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

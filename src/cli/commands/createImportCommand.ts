@@ -13,11 +13,13 @@ export default function createImportCommand() {
       file: {
         type: "string",
         alias: "f",
+        description: "TOML file path",
         required: true,
       },
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

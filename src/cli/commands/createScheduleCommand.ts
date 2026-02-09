@@ -16,51 +16,63 @@ export default function createScheduleCommand() {
       name: {
         type: "string",
         alias: "n",
+        description: "Job name",
         required: true,
       },
       description: {
         type: "string",
         alias: "d",
+        description: "Job description",
       },
       schedule: {
         type: "string",
         alias: "s",
+        description: "Cron schedule expression",
       },
       at: {
         type: "string",
         alias: "a",
+        description: "Run once at ISO timestamp",
       },
       in: {
         type: "string",
         alias: "i",
+        description: "Run once after relative duration",
       },
       timezone: {
         type: "string",
         alias: "z",
+        description: "Timezone (IANA name)",
       },
       timeout: {
         type: "string",
         alias: "t",
+        description: "Timeout in milliseconds",
       },
       paused: {
         type: "boolean",
         alias: "p",
+        description: "Create job paused",
       },
       overlap: {
         type: "string",
         alias: "o",
+        description: 'Overlap policy: "skip" or "allow"',
       },
       cwd: {
         type: "string",
         alias: "c",
+        description: "Working directory for command",
       },
       env: {
         type: "string",
         alias: "e",
+        description: "Environment variables (KEY=VALUE), repeatable",
       },
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

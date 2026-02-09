@@ -11,6 +11,7 @@ export default function createDaemonStopCommand() {
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

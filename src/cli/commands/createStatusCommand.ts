@@ -13,10 +13,12 @@ export default function createStatusCommand() {
       name: {
         type: "string",
         alias: "n",
+        description: "Job name (omit for daemon status)",
       },
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

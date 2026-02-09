@@ -18,6 +18,7 @@ export default function createDaemonInstallCommand() {
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     run({ args }) {

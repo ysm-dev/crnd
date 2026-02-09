@@ -12,15 +12,18 @@ export default function createRunsCommand() {
       name: {
         type: "string",
         alias: "n",
+        description: "Job name",
         required: true,
       },
       limit: {
         type: "string",
         alias: "l",
+        description: "Max runs to return",
       },
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

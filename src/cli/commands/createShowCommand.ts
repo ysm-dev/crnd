@@ -17,11 +17,13 @@ export default function createShowCommand() {
       name: {
         type: "string",
         alias: "n",
+        description: "Job name",
         required: true,
       },
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

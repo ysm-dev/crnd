@@ -13,6 +13,7 @@ export default function createDaemonStartCommand() {
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

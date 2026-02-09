@@ -18,15 +18,18 @@ export default function createDeleteCommand() {
       name: {
         type: "string",
         alias: "n",
+        description: "Job name",
         required: true,
       },
       force: {
         type: "boolean",
         alias: "f",
+        description: "Confirm deletion",
       },
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

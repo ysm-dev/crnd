@@ -14,6 +14,7 @@ export default function createDoctorCommand() {
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

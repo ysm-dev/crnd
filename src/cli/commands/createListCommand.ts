@@ -12,6 +12,7 @@ export default function createListCommand() {
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     async run({ args }) {

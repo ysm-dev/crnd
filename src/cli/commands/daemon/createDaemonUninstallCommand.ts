@@ -13,6 +13,7 @@ export default function createDaemonUninstallCommand() {
       json: {
         type: "boolean",
         alias: "j",
+        description: "Output in JSON format",
       },
     },
     run({ args }) {
