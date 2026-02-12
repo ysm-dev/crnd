@@ -1,6 +1,54 @@
 # crnd
 
-*Pronounced "crowned"* — Cron daemon built for agents. Text-first output, no prompts, real OS processes.
+*Pronounced "crowned"*
+
+[![npm version](https://img.shields.io/npm/v/crnd)](https://www.npmjs.com/package/crnd)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![macOS](https://img.shields.io/badge/macOS-supported-brightgreen)
+![Linux](https://img.shields.io/badge/Linux-supported-brightgreen)
+![Windows](https://img.shields.io/badge/Windows-supported-brightgreen)
+
+**Cron daemon built for agents.** No interactive prompts. Structured output. Real OS processes. Runs entirely local.
+
+AI coding agents (Claude Code, Cursor, Codex) can't use `crontab` — it requires interactive editing and produces unstructured output. crnd gives them a cron daemon they can actually drive.
+
+## Why crnd
+
+Most cron tools are built for humans clicking around. crnd is built for scripts and agents that need to:
+
+- Schedule jobs **without interactive prompts**
+- Parse structured output (`crnd list --json`)
+- Stream logs from running processes
+- Kill/stop jobs by name
+- Trust that jobs run as **real OS processes** (not some container abstraction)
+
+Everything runs locally. No cloud, no Docker, no account, no network calls.
+
+### crnd vs the alternatives
+
+| | crnd | crontab | launchd | systemd timers |
+|---|---|---|---|---|
+| Agent-friendly (no interactive UI) | Yes | No (requires `EDITOR`) | No (XML plist) | Partially |
+| Structured JSON output | Yes (`--json`) | No | No | `journalctl --output=json` |
+| One-time scheduled tasks | Yes (`-i 5m`, `-a ISO`) | No | Yes | Yes |
+| Per-job timezone | Yes | No | No | Yes |
+| Cross-platform | macOS, Linux, Windows | Linux/macOS | macOS only | Linux only |
+| Run history & logs | Built-in | No | Console.app | journalctl |
+| Job management (pause/resume/stop) | Yes | No | launchctl | systemctl |
+| Zero config install | `npx crnd` | Pre-installed | Pre-installed | Pre-installed |
+| Skill system for AI agents | Yes | No | No | No |
+
+### Platform support
+
+| Platform | Architecture | Status |
+|---|---|---|
+| macOS | Apple Silicon (arm64) | Supported |
+| macOS | Intel (x64) | Supported |
+| Linux | x64 | Supported |
+| Linux | arm64 | Supported |
+| Linux | x64 musl | Supported |
+| Linux | arm64 musl | Supported |
+| Windows | x64 | Supported |
 
 ## Install
 
@@ -46,19 +94,7 @@ crnd run-once -n backup
 crnd status -n backup
 ```
 
-That's it. Job definitions live in `~/.config/crnd/jobs.toml` - edit it directly and the daemon picks up changes.
-
-## Why crnd
-
-Most cron tools are built for humans clicking around. crnd is built for scripts and agents that need to:
-
-- Schedule jobs without interactive prompts
-- Parse structured output (`crnd list --json`)
-- Stream logs from running processes
-- Kill/stop jobs by name
-- Trust that jobs run as real OS processes (not some container abstraction)
-
-Everything runs locally. No cloud, no Docker, no account, no network calls.
+That's it. Job definitions live in `~/.config/crnd/jobs.toml` — edit it directly and the daemon picks up changes.
 
 ## Commands
 
@@ -136,6 +172,16 @@ Manual update:
 crnd upgrade              # update now
 crnd upgrade --check      # just check, don't update
 ```
+
+## Built with
+
+- [Bun](https://bun.sh) — runtime, bundler, test runner, single-binary compiler
+- [TypeScript](https://www.typescriptlang.org) — type-safe codebase
+- [Hono](https://hono.dev) — daemon HTTP/RPC server
+- [Drizzle](https://orm.drizzle.team) + SQLite — state & run history
+- [Croner](https://github.com/hexagon/croner) — timezone-aware cron parsing
+- [Zod](https://zod.dev) — input validation
+- [Biome](https://biomejs.dev) — lint & format
 
 ## Development
 
