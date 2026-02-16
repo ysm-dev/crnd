@@ -26,7 +26,7 @@ describe("shutdown handler", () => {
     writeDaemonState({
       port: Number(server.port) || 1,
       token: "token",
-      pid: 1,
+      pid: process.pid,
       startedAt: new Date().toISOString(),
       version: "0.0.0",
     });

@@ -21,7 +21,7 @@ export default function ensureAutostart() {
     return { ok: true, reason: "already_installed" };
   }
 
-  const result = Bun.spawnSync(getDaemonInstallArgs());
+  const result = Bun.spawnSync(getDaemonInstallArgs({ noStart: true }));
   if (result.success) {
     return { ok: true, reason: "installed" };
   }

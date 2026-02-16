@@ -14,14 +14,16 @@ export default function createShutdownHandler(
   logger: Logger,
   scheduler: Scheduler,
   jobsFileSync: JobsFileSync,
+  releaseLock?: () => void,
 ) {
   return () => {
     logger.info("daemon_shutdown");
     scheduler.stop();
     jobsFileSync.stop();
     appendEvent("daemon_stopped", { pid: process.pid });
-    removeDaemonState();
+    removeDaemonState(process.pid);
     server.stop();
+    releaseLock?.();
     if (process.env.CRND_TEST_MODE !== "1") {
       process.exit(0);
     }

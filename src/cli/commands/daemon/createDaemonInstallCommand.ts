@@ -3,10 +3,25 @@ import os from "node:os";
 import path from "node:path";
 import { defineCommand } from "citty";
 import getStateDir from "../../../shared/paths/getStateDir";
+import readDaemonState from "../../../shared/state/readDaemonState";
 import createLaunchdPlist from "./createLaunchdPlist";
 import createSystemdService from "./createSystemdService";
 import getDaemonServiceArgs from "./getDaemonServiceArgs";
 import quoteWindowsArg from "./quoteWindowsArg";
+
+function isDaemonRunningFromState() {
+  try {
+    const state = readDaemonState();
+    if (!state) {
+      return false;
+    }
+
+    process.kill(state.pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export default function createDaemonInstallCommand() {
   return defineCommand({
@@ -19,6 +34,10 @@ export default function createDaemonInstallCommand() {
         type: "boolean",
         alias: "j",
         description: "Output in JSON format",
+      },
+      noStart: {
+        type: "boolean",
+        description: "Install service without starting now",
       },
     },
     run({ args }) {
@@ -37,6 +56,8 @@ export default function createDaemonInstallCommand() {
       const daemonArgs = getDaemonServiceArgs();
       const platform = process.platform;
       const supportedPlatforms = ["darwin", "linux", "win32"];
+      const daemonRunning = isDaemonRunningFromState();
+      const shouldStartNow = !args.noStart && !daemonRunning;
 
       if (platform === "darwin") {
         const plistPath = path.join(
@@ -51,16 +72,29 @@ export default function createDaemonInstallCommand() {
           createLaunchdPlist(daemonArgs, stdoutPath, stderrPath),
           "utf-8",
         );
-        Bun.spawnSync(["launchctl", "unload", plistPath]);
-        const result = Bun.spawnSync(["launchctl", "load", plistPath]);
+        const result = shouldStartNow
+          ? (() => {
+              Bun.spawnSync(["launchctl", "unload", plistPath]);
+              return Bun.spawnSync(["launchctl", "load", plistPath]);
+            })()
+          : { success: true };
 
         const ok = result.success;
         if (args.json) {
-          console.log(JSON.stringify({ ok, path: plistPath }));
-        } else {
           console.log(
-            ok ? `daemon: installed (${plistPath})` : "daemon: install failed",
+            JSON.stringify({
+              ok,
+              path: plistPath,
+              started: shouldStartNow,
+            }),
           );
+        } else {
+          if (ok) {
+            const deferred = shouldStartNow ? "" : " (start deferred)";
+            console.log(`daemon: installed (${plistPath})${deferred}`);
+          } else {
+            console.log("daemon: install failed");
+          }
         }
         if (!ok) {
           process.exitCode = 1;
@@ -83,22 +117,27 @@ export default function createDaemonInstallCommand() {
           "utf-8",
         );
         Bun.spawnSync(["systemctl", "--user", "daemon-reload"]);
-        const result = Bun.spawnSync([
-          "systemctl",
-          "--user",
-          "enable",
-          "--now",
-          "crnd.service",
-        ]);
+        const result = Bun.spawnSync(
+          shouldStartNow
+            ? ["systemctl", "--user", "enable", "--now", "crnd.service"]
+            : ["systemctl", "--user", "enable", "crnd.service"],
+        );
         const ok = result.success;
         if (args.json) {
-          console.log(JSON.stringify({ ok, path: servicePath }));
-        } else {
           console.log(
-            ok
-              ? `daemon: installed (${servicePath})`
-              : "daemon: install failed",
+            JSON.stringify({
+              ok,
+              path: servicePath,
+              started: shouldStartNow,
+            }),
           );
+        } else {
+          if (ok) {
+            const deferred = shouldStartNow ? "" : " (start deferred)";
+            console.log(`daemon: installed (${servicePath})${deferred}`);
+          } else {
+            console.log("daemon: install failed");
+          }
         }
         if (!ok) {
           process.exitCode = 1;
@@ -122,7 +161,7 @@ export default function createDaemonInstallCommand() {
         ]);
         const ok = result.success;
         if (args.json) {
-          console.log(JSON.stringify({ ok, task: taskName }));
+          console.log(JSON.stringify({ ok, task: taskName, started: false }));
         } else {
           console.log(
             ok ? `daemon: installed (${taskName})` : "daemon: install failed",

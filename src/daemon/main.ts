@@ -11,55 +11,83 @@ import recoverRunningRuns from "./runner/recoverRunningRuns";
 import createScheduler from "./scheduler/createScheduler";
 import createApp from "./server/createApp";
 import startServer from "./server/startServer";
+import acquireDaemonLock from "./singleton/acquireDaemonLock";
 
 export default function startDaemon() {
   const logger = createLogger();
-  const startedAt = new Date().toISOString();
-  const token = createToken();
-  const pid = process.pid;
-  const { orm } = openDatabase();
-  const migrationResult = migrateDatabase(orm);
-  if (!migrationResult.migrated) {
-    logger.warn({
-      event: "migrations_skipped",
-      reason: migrationResult.reason,
+  const daemonLock = acquireDaemonLock();
+  if (!daemonLock.ok) {
+    logger.info({
+      event: "daemon_already_running",
+      ownerPid: daemonLock.ownerPid,
     });
-  }
-  recoverRunningRuns(orm);
-  const scheduler = createScheduler(orm);
-  const jobsFileSync = createJobsFileSync(orm, scheduler, logger);
-  jobsFileSync.init();
-  scheduler.start();
-  let shutdown = () => {};
-  const app = createApp(
-    { token, startedAt, pid },
-    orm,
-    scheduler,
-    jobsFileSync,
-    () => shutdown(),
-    logger,
-  );
-  const server = startServer(app);
-  const port = server.port;
-  if (typeof port !== "number") {
-    throw new Error("daemon_port_unavailable");
+    return null;
   }
 
-  writeDaemonState({
-    port,
-    token,
-    pid,
-    startedAt,
-    version: getVersion(),
-  });
+  const releaseLock = () => daemonLock.lock.release();
+  process.on("exit", releaseLock);
 
-  appendEvent("daemon_started", { pid });
+  try {
+    const startedAt = new Date().toISOString();
+    const token = createToken();
+    const pid = process.pid;
+    const { orm } = openDatabase();
+    const migrationResult = migrateDatabase(orm);
+    if (!migrationResult.migrated) {
+      logger.warn({
+        event: "migrations_skipped",
+        reason: migrationResult.reason,
+      });
+    }
+    recoverRunningRuns(orm);
+    const scheduler = createScheduler(orm);
+    const jobsFileSync = createJobsFileSync(orm, scheduler, logger);
+    jobsFileSync.init();
+    scheduler.start();
+    let shutdown = () => {};
+    const app = createApp(
+      { token, startedAt, pid },
+      orm,
+      scheduler,
+      jobsFileSync,
+      () => shutdown(),
+      logger,
+    );
+    const server = startServer(app);
+    const port = server.port;
+    if (typeof port !== "number") {
+      throw new Error("daemon_port_unavailable");
+    }
 
-  logger.info("daemon_started");
+    writeDaemonState({
+      port,
+      token,
+      pid,
+      startedAt,
+      version: getVersion(),
+    });
 
-  shutdown = createShutdownHandler(server, logger, scheduler, jobsFileSync);
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
+    appendEvent("daemon_started", { pid });
 
-  return { server, shutdown: () => shutdown() };
+    logger.info("daemon_started");
+
+    shutdown = createShutdownHandler(
+      server,
+      logger,
+      scheduler,
+      jobsFileSync,
+      () => {
+        process.off("exit", releaseLock);
+        daemonLock.lock.release();
+      },
+    );
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
+
+    return { server, shutdown: () => shutdown() };
+  } catch (error) {
+    process.off("exit", releaseLock);
+    daemonLock.lock.release();
+    throw error;
+  }
 }

@@ -8,7 +8,10 @@ export default function createDaemonServeCommand() {
       description: "Run the daemon in the foreground",
     },
     run() {
-      startDaemon();
+      const runtime = startDaemon();
+      if (!runtime) {
+        console.log("daemon: already running");
+      }
     },
   });
 }

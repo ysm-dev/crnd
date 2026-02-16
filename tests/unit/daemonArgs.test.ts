@@ -52,4 +52,17 @@ describe("daemon arg builders", () => {
     expect(installArgs[2]).toBe("install");
     process.argv = originalArgv;
   });
+
+  test("supports no-start for install args", () => {
+    const originalArgv = process.argv;
+    process.argv = ["bun", "/$bunfs/root/crnd", "daemon", "install"];
+
+    const installArgs = getDaemonInstallArgs({ noStart: true });
+    expect(installArgs[0]).toBe(process.execPath);
+    expect(installArgs[1]).toBe("daemon");
+    expect(installArgs[2]).toBe("install");
+    expect(installArgs.includes("--no-start")).toBe(true);
+
+    process.argv = originalArgv;
+  });
 });
