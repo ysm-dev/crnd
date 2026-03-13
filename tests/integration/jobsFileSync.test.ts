@@ -20,6 +20,9 @@ describe("jobs file sync", () => {
   let restoreEnv = () => {};
   let root = "";
 
+  const wait = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
   beforeAll(() => {
     root = createTempRoot();
     restoreEnv = setXdgEnv(root);
@@ -72,7 +75,15 @@ describe("jobs file sync", () => {
     );
     renameSync(tempPath, jobsTomlPath);
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const rows = orm.select().from(jobs).all();
+      if (rows.some((row) => row.name === "renamed")) {
+        sync.stop();
+        return;
+      }
+
+      await wait(50);
+    }
 
     const rows = orm.select().from(jobs).all();
     expect(rows.some((row) => row.name === "renamed")).toBe(true);

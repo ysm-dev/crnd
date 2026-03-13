@@ -81,19 +81,21 @@ export default function createJobsFileSync(
     }
   };
 
-  const queueApplyFromFile = () => {
-    if (ignore) {
-      return;
-    }
-
+  const queueApplyFromFile = (delayMs = ignore ? 60 : 25) => {
     if (applyTimer) {
       clearTimeout(applyTimer);
     }
 
     applyTimer = setTimeout(() => {
       applyTimer = null;
+
+      if (ignore) {
+        queueApplyFromFile(25);
+        return;
+      }
+
       applyFromFile();
-    }, 25);
+    }, delayMs);
   };
 
   return {
@@ -106,12 +108,7 @@ export default function createJobsFileSync(
       }
 
       const jobsTomlDir = path.dirname(jobsTomlPath);
-      const jobsTomlName = path.basename(jobsTomlPath);
-      watcher = watch(jobsTomlDir, { persistent: false }, (_, filename) => {
-        if (filename !== null && filename !== jobsTomlName) {
-          return;
-        }
-
+      watcher = watch(jobsTomlDir, { persistent: false }, () => {
         queueApplyFromFile();
       });
     },
