@@ -49,6 +49,7 @@ describe("jobs file sync", () => {
       expect(content.includes("[jobs.test]")).toBe(true);
     } finally {
       sync.stop();
+      scheduler.stop();
       db.close();
     }
   });
@@ -84,6 +85,7 @@ describe("jobs file sync", () => {
       expect(rows.some((row) => row.name === "renamed")).toBe(true);
     } finally {
       sync.stop();
+      scheduler.stop();
       db.close();
     }
   });

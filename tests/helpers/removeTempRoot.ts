@@ -17,6 +17,10 @@ export default function removeTempRoot(root: string) {
     return;
   }
 
+  if (process.platform === "win32") {
+    return;
+  }
+
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt < 60; attempt += 1) {
