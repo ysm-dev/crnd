@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { defineCommand } from "citty";
+import getAutostartPath from "../../../daemon/autostart/getAutostartPath";
 import getStateDir from "../../../shared/paths/getStateDir";
 import readDaemonState from "../../../shared/state/readDaemonState";
 import createLaunchdPlist from "./createLaunchdPlist";
@@ -60,12 +60,11 @@ export default function createDaemonInstallCommand() {
       const shouldStartNow = !args.noStart && !daemonRunning;
 
       if (platform === "darwin") {
-        const plistPath = path.join(
-          os.homedir(),
-          "Library",
-          "LaunchAgents",
-          "com.crnd.daemon.plist",
-        );
+        const plistPath = getAutostartPath();
+        if (!plistPath) {
+          process.exitCode = 1;
+          return;
+        }
         mkdirSync(path.dirname(plistPath), { recursive: true });
         writeFileSync(
           plistPath,
@@ -103,13 +102,11 @@ export default function createDaemonInstallCommand() {
       }
 
       if (platform === "linux") {
-        const servicePath = path.join(
-          os.homedir(),
-          ".config",
-          "systemd",
-          "user",
-          "crnd.service",
-        );
+        const servicePath = getAutostartPath();
+        if (!servicePath) {
+          process.exitCode = 1;
+          return;
+        }
         mkdirSync(path.dirname(servicePath), { recursive: true });
         writeFileSync(
           servicePath,
@@ -146,9 +143,13 @@ export default function createDaemonInstallCommand() {
       }
 
       if (platform === "win32") {
-        const taskName = "crnd";
+        const taskName = getAutostartPath();
+        if (!taskName) {
+          process.exitCode = 1;
+          return;
+        }
         const taskCommand = daemonArgs.map(quoteWindowsArg).join(" ");
-        const result = Bun.spawnSync([
+        const createResult = Bun.spawnSync([
           "schtasks",
           "/Create",
           "/F",
@@ -159,13 +160,21 @@ export default function createDaemonInstallCommand() {
           "/TR",
           taskCommand,
         ]);
-        const ok = result.success;
+        const runResult =
+          createResult.success && shouldStartNow
+            ? Bun.spawnSync(["schtasks", "/Run", "/TN", taskName])
+            : null;
+        const ok = createResult.success && (runResult?.success ?? true);
+        const started = shouldStartNow && runResult?.success === true;
         if (args.json) {
-          console.log(JSON.stringify({ ok, task: taskName, started: false }));
+          console.log(JSON.stringify({ ok, task: taskName, started }));
         } else {
-          console.log(
-            ok ? `daemon: installed (${taskName})` : "daemon: install failed",
-          );
+          if (ok) {
+            const deferred = shouldStartNow ? "" : " (start deferred)";
+            console.log(`daemon: installed (${taskName})${deferred}`);
+          } else {
+            console.log("daemon: install failed");
+          }
         }
         if (!ok) {
           process.exitCode = 1;

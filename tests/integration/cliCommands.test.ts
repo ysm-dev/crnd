@@ -12,6 +12,7 @@ import createRpcClient from "../../src/shared/rpc/createRpcClient";
 import removeDaemonState from "../../src/shared/state/removeDaemonState";
 import writeDaemonState from "../../src/shared/state/writeDaemonState";
 import createTempRoot from "../helpers/createTempRoot";
+import getEchoCommand from "../helpers/getEchoCommand";
 import getSleepCommand from "../helpers/getSleepCommand";
 import runRootCommand from "../helpers/runRootCommand";
 import setXdgEnv from "../helpers/setXdgEnv";
@@ -96,8 +97,7 @@ describe("cli commands", () => {
           "-d",
           "test cron",
           "--",
-          "/bin/echo",
-          "hello",
+          ...getEchoCommand("hello"),
         ]),
       ).toBe(0);
 
@@ -113,8 +113,7 @@ describe("cli commands", () => {
           "-d",
           "updated",
           "--",
-          "/bin/echo",
-          "hello",
+          ...getEchoCommand("hello"),
         ]),
       ).toBe(0);
 
@@ -147,8 +146,7 @@ describe("cli commands", () => {
           "-o",
           "allow",
           "--",
-          sleepCommand,
-          "5",
+          ...sleepCommand,
         ]),
       ).toBe(0);
       const waitForRunning = async () => {

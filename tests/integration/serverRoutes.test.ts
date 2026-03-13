@@ -7,6 +7,7 @@ import createApp from "../../src/daemon/server/createApp";
 import migrateDatabase from "../../src/db/migrateDatabase";
 import openDatabase from "../../src/db/openDatabase";
 import createTempRoot from "../helpers/createTempRoot";
+import getEchoCommand from "../helpers/getEchoCommand";
 import getSleepCommand from "../helpers/getSleepCommand";
 import setXdgEnv from "../helpers/setXdgEnv";
 
@@ -86,7 +87,7 @@ describe("daemon routes", () => {
 
     const jobPayload = {
       name: "job",
-      command: ["/bin/echo", "hello"],
+      command: getEchoCommand("hello"),
       schedule: "*/1 * * * *",
       timezone: "UTC",
     };
@@ -139,7 +140,7 @@ describe("daemon routes", () => {
     const sleepCommand = getSleepCommand();
     const sleepyPayload = {
       name: "sleepy",
-      command: [sleepCommand, "5"],
+      command: sleepCommand,
       schedule: "*/5 * * * *",
       overlapPolicy: "allow",
     };

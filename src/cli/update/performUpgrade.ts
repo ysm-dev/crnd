@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import createRpcClient from "../../shared/rpc/createRpcClient";
 import removeDaemonState from "../../shared/state/removeDaemonState";
 import getDaemonSpawnArgs from "../getDaemonSpawnArgs";
+import waitForDaemonReady from "../waitForDaemonReady";
 import detectInstallMethod, { type InstallMethod } from "./detectInstallMethod";
 
 interface UpgradeResult {
@@ -64,22 +65,7 @@ async function startDaemon(): Promise<boolean> {
   });
   proc.unref();
 
-  // Wait for daemon to be ready
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const client = createRpcClient();
-    if (!client) {
-      continue;
-    }
-    try {
-      const res = await client.health.$get();
-      if (res.ok) {
-        return true;
-      }
-    } catch {}
-  }
-
-  return false;
+  return (await waitForDaemonReady()) !== null;
 }
 
 function getUpdateCommand(

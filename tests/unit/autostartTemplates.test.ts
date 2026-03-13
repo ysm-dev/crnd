@@ -10,8 +10,12 @@ describe("autostart templates", () => {
   });
 
   test("quote windows args", () => {
+    expect(quoteWindowsArg("plain")).toBe("plain");
     expect(quoteWindowsArg("hello world")).toBe('"hello world"');
     expect(quoteWindowsArg('a"b')).toBe('"a\\"b"');
+    expect(quoteWindowsArg("C:\\Program Files\\crnd\\")).toBe(
+      '"C:\\Program Files\\crnd\\\\"',
+    );
   });
 
   test("launchd plist", () => {
@@ -26,11 +30,13 @@ describe("autostart templates", () => {
 
   test("systemd service", () => {
     const service = createSystemdService(
-      ["/bin/echo", "hi"],
+      ["/bin/echo", "hello world", "%i", 'a"b'],
       "/tmp/out",
       "/tmp/err",
     );
-    expect(service.includes("ExecStart=/bin/echo hi")).toBe(true);
+    expect(
+      service.includes('ExecStart=/bin/echo "hello world" %%i a\\"b'),
+    ).toBe(true);
     expect(service.includes("StandardOutput=append:/tmp/out")).toBe(true);
   });
 });

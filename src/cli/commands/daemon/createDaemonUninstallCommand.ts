@@ -1,7 +1,6 @@
 import { existsSync, unlinkSync } from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { defineCommand } from "citty";
+import getAutostartPath from "../../../daemon/autostart/getAutostartPath";
 
 export default function createDaemonUninstallCommand() {
   return defineCommand({
@@ -31,12 +30,11 @@ export default function createDaemonUninstallCommand() {
       const supportedPlatforms = ["darwin", "linux", "win32"];
 
       if (platform === "darwin") {
-        const plistPath = path.join(
-          os.homedir(),
-          "Library",
-          "LaunchAgents",
-          "com.crnd.daemon.plist",
-        );
+        const plistPath = getAutostartPath();
+        if (!plistPath) {
+          process.exitCode = 1;
+          return;
+        }
         Bun.spawnSync(["launchctl", "unload", plistPath]);
         if (existsSync(plistPath)) {
           unlinkSync(plistPath);
@@ -51,13 +49,11 @@ export default function createDaemonUninstallCommand() {
       }
 
       if (platform === "linux") {
-        const servicePath = path.join(
-          os.homedir(),
-          ".config",
-          "systemd",
-          "user",
-          "crnd.service",
-        );
+        const servicePath = getAutostartPath();
+        if (!servicePath) {
+          process.exitCode = 1;
+          return;
+        }
         Bun.spawnSync([
           "systemctl",
           "--user",
@@ -79,7 +75,11 @@ export default function createDaemonUninstallCommand() {
       }
 
       if (platform === "win32") {
-        const taskName = "crnd";
+        const taskName = getAutostartPath();
+        if (!taskName) {
+          process.exitCode = 1;
+          return;
+        }
         Bun.spawnSync(["schtasks", "/Delete", "/TN", taskName, "/F"]);
         if (args.json) {
           console.log(JSON.stringify({ ok: true, task: taskName }));

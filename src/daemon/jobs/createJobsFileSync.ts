@@ -1,5 +1,6 @@
 import type { FSWatcher } from "node:fs";
 import { existsSync, watch } from "node:fs";
+import path from "node:path";
 import type openDatabase from "../../db/openDatabase";
 import { jobs } from "../../db/schema";
 import formatJobRow from "../../shared/jobs/formatJobRow";
@@ -23,6 +24,7 @@ export default function createJobsFileSync(
 ) {
   let ignore = false;
   let watcher: FSWatcher | null = null;
+  let applyTimer: ReturnType<typeof setTimeout> | null = null;
 
   const applyJobs = (jobsFromToml: ReturnType<typeof readJobsToml>) => {
     const existing = db.select().from(jobs).all().map(formatJobRow);
@@ -79,23 +81,45 @@ export default function createJobsFileSync(
     }
   };
 
+  const queueApplyFromFile = () => {
+    if (ignore) {
+      return;
+    }
+
+    if (applyTimer) {
+      clearTimeout(applyTimer);
+    }
+
+    applyTimer = setTimeout(() => {
+      applyTimer = null;
+      applyFromFile();
+    }, 25);
+  };
+
   return {
     init() {
-      const path = getJobsTomlPath();
-      if (existsSync(path)) {
+      const jobsTomlPath = getJobsTomlPath();
+      if (existsSync(jobsTomlPath)) {
         applyFromFile();
       } else {
         writeFromDb();
       }
 
-      watcher = watch(path, { persistent: false }, () => {
-        if (ignore) {
+      const jobsTomlDir = path.dirname(jobsTomlPath);
+      const jobsTomlName = path.basename(jobsTomlPath);
+      watcher = watch(jobsTomlDir, { persistent: false }, (_, filename) => {
+        if (filename !== null && filename !== jobsTomlName) {
           return;
         }
-        applyFromFile();
+
+        queueApplyFromFile();
       });
     },
     stop() {
+      if (applyTimer) {
+        clearTimeout(applyTimer);
+        applyTimer = null;
+      }
       watcher?.close();
     },
     writeFromDb,

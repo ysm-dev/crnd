@@ -1,10 +1,17 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import createLogger from "../../src/daemon/createLogger";
 import createJobsFileSync from "../../src/daemon/jobs/createJobsFileSync";
 import createScheduler from "../../src/daemon/scheduler/createScheduler";
 import migrateDatabase from "../../src/db/migrateDatabase";
 import openDatabase from "../../src/db/openDatabase";
+import { jobs } from "../../src/db/schema";
 import getJobsTomlPath from "../../src/shared/paths/getJobsTomlPath";
 import createTempRoot from "../helpers/createTempRoot";
 import setXdgEnv from "../helpers/setXdgEnv";
@@ -45,6 +52,30 @@ describe("jobs file sync", () => {
 
     const content = readFileSync(path, "utf-8");
     expect(content.includes("[jobs.test]")).toBe(true);
+    sync.stop();
+  });
+
+  test("reloads after atomic rename", async () => {
+    const logger = createLogger();
+    const { orm } = openDatabase();
+    migrateDatabase(orm);
+    const scheduler = createScheduler(orm);
+    const sync = createJobsFileSync(orm, scheduler, logger);
+    sync.init();
+
+    const jobsTomlPath = getJobsTomlPath();
+    const tempPath = `${jobsTomlPath}.tmp`;
+    writeFileSync(
+      tempPath,
+      '[jobs.renamed]\ncommand = ["echo", "hi"]\nschedule = "*/1 * * * *"\n',
+      "utf-8",
+    );
+    renameSync(tempPath, jobsTomlPath);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const rows = orm.select().from(jobs).all();
+    expect(rows.some((row) => row.name === "renamed")).toBe(true);
     sync.stop();
   });
 });
