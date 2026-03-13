@@ -31,7 +31,7 @@ export default function startDaemon() {
     const startedAt = new Date().toISOString();
     const token = createToken();
     const pid = process.pid;
-    const { orm } = openDatabase();
+    const { db, orm } = openDatabase();
     const migrationResult = migrateDatabase(orm);
     if (!migrationResult.migrated) {
       logger.warn({
@@ -77,6 +77,7 @@ export default function startDaemon() {
       scheduler,
       jobsFileSync,
       () => {
+        db.close();
         process.off("exit", releaseLock);
         daemonLock.lock.release();
       },

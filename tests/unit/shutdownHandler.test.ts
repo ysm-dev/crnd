@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { Hono } from "hono";
 import createLogger from "../../src/daemon/createLogger";
 import createShutdownHandler from "../../src/daemon/createShutdownHandler";
@@ -11,13 +11,14 @@ import openDatabase from "../../src/db/openDatabase";
 import getDaemonStatePath from "../../src/shared/state/getDaemonStatePath";
 import writeDaemonState from "../../src/shared/state/writeDaemonState";
 import createTempRoot from "../helpers/createTempRoot";
+import removeTempRoot from "../helpers/removeTempRoot";
 import setXdgEnv from "../helpers/setXdgEnv";
 
 describe("shutdown handler", () => {
   test("stops and removes state", () => {
     const root = createTempRoot();
     const restore = setXdgEnv(root);
-    const { orm } = openDatabase();
+    const { db, orm } = openDatabase();
     migrateDatabase(orm);
     const logger = createLogger();
     const scheduler = createScheduler(orm);
@@ -54,9 +55,8 @@ describe("shutdown handler", () => {
 
     expect(exitCalls.length).toBe(1);
     expect(existsSync(getDaemonStatePath())).toBe(false);
+    db.close();
     restore();
-    if (existsSync(root)) {
-      rmSync(root, { recursive: true, force: true });
-    }
+    removeTempRoot(root);
   });
 });

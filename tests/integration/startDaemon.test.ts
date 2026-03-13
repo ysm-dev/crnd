@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, rmSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import startDaemon from "../../src/daemon/main";
 import getDaemonLockPath from "../../src/shared/state/getDaemonLockPath";
 import createTempRoot from "../helpers/createTempRoot";
+import removeTempRoot from "../helpers/removeTempRoot";
 import setXdgEnv from "../helpers/setXdgEnv";
 
 describe("startDaemon", () => {
@@ -16,9 +17,7 @@ describe("startDaemon", () => {
     } finally {
       process.env.CRND_TEST_MODE = undefined;
       restore();
-      if (existsSync(root)) {
-        rmSync(root, { recursive: true, force: true });
-      }
+      removeTempRoot(root);
     }
   }
 

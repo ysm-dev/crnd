@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import path from "node:path";
 import getAutostartPath from "../../src/daemon/autostart/getAutostartPath";
 
 function withPlatform<T>(platform: NodeJS.Platform, fn: () => T) {
@@ -23,7 +24,9 @@ describe("autostart path", () => {
     process.env.XDG_CONFIG_HOME = "/tmp/crnd-xdg";
 
     const autostartPath = withPlatform("linux", () => getAutostartPath());
-    expect(autostartPath).toBe("/tmp/crnd-xdg/systemd/user/crnd.service");
+    expect(autostartPath).toBe(
+      path.join("/tmp/crnd-xdg", "systemd", "user", "crnd.service"),
+    );
 
     process.env.XDG_CONFIG_HOME = previous;
   });

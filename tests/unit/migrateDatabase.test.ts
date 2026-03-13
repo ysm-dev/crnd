@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import migrateDatabase from "../../src/db/migrateDatabase";
 import openDatabase from "../../src/db/openDatabase";
 import getStateDir from "../../src/shared/paths/getStateDir";
 import createTempRoot from "../helpers/createTempRoot";
+import removeTempRoot from "../helpers/removeTempRoot";
 import setXdgEnv from "../helpers/setXdgEnv";
 
 function withCwd<T>(cwd: string, fn: () => T) {
@@ -23,10 +24,13 @@ describe("migrateDatabase", () => {
     const root = createTempRoot();
     const otherCwd = createTempRoot();
     const restore = setXdgEnv(root);
+    let closeDb = () => {};
 
     try {
       withCwd(otherCwd, () => {
-        const { orm } = openDatabase();
+        const database = openDatabase();
+        closeDb = () => database.db.close();
+        const { orm } = database;
         const result = migrateDatabase(orm);
         expect(result.migrated).toBe(true);
       });
@@ -40,13 +44,10 @@ describe("migrateDatabase", () => {
         ),
       ).toContain('"dialect": "sqlite"');
     } finally {
+      closeDb();
       restore();
-      if (existsSync(otherCwd)) {
-        rmSync(otherCwd, { recursive: true, force: true });
-      }
-      if (existsSync(root)) {
-        rmSync(root, { recursive: true, force: true });
-      }
+      removeTempRoot(otherCwd);
+      removeTempRoot(root);
     }
   });
 });
