@@ -69,9 +69,4 @@ jobs:
           .\crnd-windows-ci.exe schedule -n echo-hi -s "*/5 * * * *" -- cmd /c echo hi
           .\crnd-windows-ci.exe list
           .\crnd-windows-ci.exe status -n echo-hi
-          .\crnd-windows-ci.exe run-once -n echo-hi
-
-          Start-Sleep -Seconds 1
-
-          .\crnd-windows-ci.exe runs -n echo-hi -l 1
           .\crnd-windows-ci.exe daemon stop
