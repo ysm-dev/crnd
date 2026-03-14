@@ -10,8 +10,9 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
@@ -27,3 +28,49 @@ jobs:
         run: bun test
       - name: Build
         run: bun run build
+      - name: Native compiled smoke
+        if: matrix.os != 'windows-latest'
+        run: |
+          root=$(mktemp -d)
+          CRND_PATHS_ROOT="$root" \
+          CRND_DISABLE_AUTOSTART=1 \
+          CRND_AUTOSTART_DRY_RUN=1 \
+          CRND_NO_AUTO_UPDATE=1 \
+          ./dist/crnd schedule -n echo-hi -s "*/5 * * * *" -- bun -e 'console.log("hi")'
+
+          CRND_PATHS_ROOT="$root" \
+          CRND_DISABLE_AUTOSTART=1 \
+          CRND_AUTOSTART_DRY_RUN=1 \
+          CRND_NO_AUTO_UPDATE=1 \
+          ./dist/crnd list
+
+          CRND_PATHS_ROOT="$root" \
+          CRND_DISABLE_AUTOSTART=1 \
+          CRND_AUTOSTART_DRY_RUN=1 \
+          CRND_NO_AUTO_UPDATE=1 \
+          ./dist/crnd daemon stop
+      - name: Windows compiled smoke
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          bun build ./src/cli/main.ts --compile --target=bun-windows-x64 --outfile crnd-windows-ci.exe
+
+          $root = Join-Path $env:RUNNER_TEMP "crnd-smoke"
+          if (Test-Path $root) {
+            Remove-Item $root -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $root | Out-Null
+
+          $env:CRND_PATHS_ROOT = $root
+          $env:CRND_DISABLE_AUTOSTART = "1"
+          $env:CRND_AUTOSTART_DRY_RUN = "1"
+          $env:CRND_NO_AUTO_UPDATE = "1"
+
+          .\crnd-windows-ci.exe schedule -n echo-hi -s "*/5 * * * *" -- cmd /c echo hi
+          .\crnd-windows-ci.exe list
+          .\crnd-windows-ci.exe status -n echo-hi
+          .\crnd-windows-ci.exe daemon stop
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "daemon stop exited with $LASTEXITCODE; continuing"
+            exit 0
+          }

@@ -1,5 +1,6 @@
+import type { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import createLogger from "../../src/daemon/createLogger";
 import createJobsFileSync from "../../src/daemon/jobs/createJobsFileSync";
@@ -12,7 +13,9 @@ import createRpcClient from "../../src/shared/rpc/createRpcClient";
 import removeDaemonState from "../../src/shared/state/removeDaemonState";
 import writeDaemonState from "../../src/shared/state/writeDaemonState";
 import createTempRoot from "../helpers/createTempRoot";
+import getEchoCommand from "../helpers/getEchoCommand";
 import getSleepCommand from "../helpers/getSleepCommand";
+import removeTempRoot from "../helpers/removeTempRoot";
 import runRootCommand from "../helpers/runRootCommand";
 import setXdgEnv from "../helpers/setXdgEnv";
 import withTty from "../helpers/withTty";
@@ -23,11 +26,14 @@ describe("cli commands", () => {
   let root = "";
   let restoreEnv = () => {};
   let shutdown = () => {};
+  let db: Database | null = null;
 
   beforeAll(() => {
     root = createTempRoot();
     restoreEnv = setXdgEnv(root);
-    const { orm } = openDatabase();
+    const database = openDatabase();
+    db = database.db;
+    const { orm } = database;
     migrateDatabase(orm);
     const scheduler = createScheduler(orm);
     const logger = createLogger();
@@ -52,6 +58,8 @@ describe("cli commands", () => {
       jobsFileSync.stop();
       server.stop();
       removeDaemonState();
+      db?.close();
+      db = null;
     };
     if (typeof server.port !== "number") {
       throw new Error("missing port");
@@ -69,9 +77,7 @@ describe("cli commands", () => {
     await runRootCommand(["daemon", "stop"]);
     shutdown();
     restoreEnv();
-    if (existsSync(root)) {
-      rmSync(root, { recursive: true, force: true });
-    }
+    removeTempRoot(root);
   });
 
   test("command success", async () => {
@@ -96,8 +102,7 @@ describe("cli commands", () => {
           "-d",
           "test cron",
           "--",
-          "/bin/echo",
-          "hello",
+          ...getEchoCommand("hello"),
         ]),
       ).toBe(0);
 
@@ -113,8 +118,7 @@ describe("cli commands", () => {
           "-d",
           "updated",
           "--",
-          "/bin/echo",
-          "hello",
+          ...getEchoCommand("hello"),
         ]),
       ).toBe(0);
 
@@ -147,8 +151,7 @@ describe("cli commands", () => {
           "-o",
           "allow",
           "--",
-          sleepCommand,
-          "5",
+          ...sleepCommand,
         ]),
       ).toBe(0);
       const waitForRunning = async () => {

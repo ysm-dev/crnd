@@ -1,11 +1,7 @@
-import { existsSync } from "node:fs";
-
-export default function getSleepCommand() {
-  if (existsSync("/bin/sleep")) {
-    return "/bin/sleep";
-  }
-  if (existsSync("/usr/bin/sleep")) {
-    return "/usr/bin/sleep";
-  }
-  return "sleep";
+export default function getSleepCommand(durationMs = 5000) {
+  return [
+    process.execPath,
+    "-e",
+    `setTimeout(() => {}, ${Math.max(0, Math.trunc(durationMs))})`,
+  ];
 }

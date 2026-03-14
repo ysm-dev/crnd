@@ -1,6 +1,10 @@
 import os from "node:os";
 import path from "node:path";
 
+function getLinuxConfigDir() {
+  return process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config");
+}
+
 export default function getAutostartPath() {
   if (process.platform === "darwin") {
     return path.join(
@@ -12,13 +16,7 @@ export default function getAutostartPath() {
   }
 
   if (process.platform === "linux") {
-    return path.join(
-      os.homedir(),
-      ".config",
-      "systemd",
-      "user",
-      "crnd.service",
-    );
+    return path.join(getLinuxConfigDir(), "systemd", "user", "crnd.service");
   }
 
   if (process.platform === "win32") {

@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 import createRpcClient from "../../../shared/rpc/createRpcClient";
 import removeDaemonState from "../../../shared/state/removeDaemonState";
 import getDaemonSpawnArgs from "../../getDaemonSpawnArgs";
+import waitForDaemonReady from "../../waitForDaemonReady";
 
 export default function createDaemonStartCommand() {
   return defineCommand({
@@ -42,24 +43,28 @@ export default function createDaemonStartCommand() {
       });
       proc.unref();
 
-      for (let attempt = 0; attempt < 20; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        const client = createRpcClient();
-        if (!client) {
-          continue;
-        }
+      const client = await waitForDaemonReady();
+      if (client) {
+        let data: unknown;
         try {
           const res = await client.health.$get();
           if (res.ok) {
-            const data = await res.json();
-            if (args.json) {
-              console.log(JSON.stringify({ status: "started", daemon: data }));
-            } else {
-              console.log("daemon: started");
-            }
-            return;
+            data = await res.json();
           }
         } catch {}
+
+        if (args.json) {
+          console.log(
+            JSON.stringify(
+              data
+                ? { status: "started", daemon: data }
+                : { status: "started" },
+            ),
+          );
+        } else {
+          console.log("daemon: started");
+        }
+        return;
       }
 
       const payload = { status: "start_timeout" };

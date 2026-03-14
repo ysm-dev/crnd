@@ -99,7 +99,7 @@ export default function createScheduleCommand() {
             "  command: Command is required. Provide the command after --",
           );
           console.log(
-            "  Example: crnd schedule -n myjob -s '0 * * * *' -- /bin/echo hello",
+            "  Example: crnd schedule -n myjob -s '0 * * * *' -- echo hello",
           );
         }
         process.exitCode = 2;

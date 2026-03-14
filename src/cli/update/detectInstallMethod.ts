@@ -1,14 +1,11 @@
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 
 export type InstallMethod = "npm" | "bun" | "brew" | "unknown";
 
 function commandExists(cmd: string): boolean {
-  try {
-    execSync(`command -v ${cmd}`, { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
+  const locator = process.platform === "win32" ? "where" : "which";
+  const result = spawnSync(locator, [cmd], { stdio: "ignore" });
+  return result.status === 0 && !result.error;
 }
 
 function isInstalledViaBrew(): boolean {
@@ -20,12 +17,8 @@ function isInstalledViaBrew(): boolean {
 
   // Check if brew knows about crnd
   if (commandExists("brew")) {
-    try {
-      execSync("brew list crnd", { stdio: "ignore" });
-      return true;
-    } catch {
-      return false;
-    }
+    const result = spawnSync("brew", ["list", "crnd"], { stdio: "ignore" });
+    return result.status === 0 && !result.error;
   }
 
   return false;
@@ -36,14 +29,10 @@ function isInstalledViaNpm(): boolean {
     return false;
   }
 
-  try {
-    const result = execSync("npm list -g crnd --depth=0 2>/dev/null", {
-      encoding: "utf-8",
-    });
-    return result.includes("crnd@");
-  } catch {
-    return false;
-  }
+  const result = spawnSync("npm", ["list", "-g", "crnd", "--depth=0"], {
+    encoding: "utf-8",
+  });
+  return result.status === 0 && result.stdout.includes("crnd@");
 }
 
 function isInstalledViaBun(): boolean {
@@ -51,12 +40,10 @@ function isInstalledViaBun(): boolean {
     return false;
   }
 
-  try {
-    const result = execSync("bun pm ls -g 2>/dev/null", { encoding: "utf-8" });
-    return result.includes("crnd@");
-  } catch {
-    return false;
-  }
+  const result = spawnSync("bun", ["pm", "ls", "-g"], {
+    encoding: "utf-8",
+  });
+  return result.status === 0 && result.stdout.includes("crnd@");
 }
 
 export default function detectInstallMethod(): InstallMethod {
